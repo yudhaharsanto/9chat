@@ -398,6 +398,19 @@ export function ChatArea() {
     setEditBranches((prev) => ({ ...prev, [editGroupId]: branch }));
   };
 
+  // ── Cancel generation ──
+  const handleCancelGeneration = async () => {
+    if (!streamingMsgIdRef.current) return;
+    try {
+      await fetch("/api/chat/cancel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messageId: streamingMsgIdRef.current }),
+      });
+      // SSE will handle the failed status update
+    } catch {}
+  };
+
   // ── Regenerate last assistant response ──
   const handleRegenerate = async () => {
     if (!activeConversation?.id || isStreaming) return;
@@ -823,26 +836,44 @@ export function ChatArea() {
                 if (lastUserEditGroup && lastUserGroupTotal > 1 && branchIndex !== currentBranch) continue;
                 const isLastAssistant = !isStreaming && msg.id === lastVisibleAssistantId;
                 display.push(
-                  <ChatMessage key={msg.id} role="assistant" content={msg.content} onRetry={isLastAssistant ? handleRegenerate : undefined} createdAt={msg.created_at} />
+                  <ChatMessage key={msg.id} role="assistant" content={msg.content} onRetry={isLastAssistant ? handleRegenerate : undefined} createdAt={msg.created_at} status={msg.status} />
                 );
               }
             }
             return display;
           })()}
           {isStreaming && streamingContent && (
-            <ChatMessage role="assistant" content={streamingContent} isStreaming />
+            <div>
+              <ChatMessage role="assistant" content={streamingContent} isStreaming />
+              <div className="mt-1 ml-9">
+                <button
+                  onClick={handleCancelGeneration}
+                  className="flex items-center gap-1.5 rounded-full bg-muted/80 px-3 py-1 text-xs text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2" /></svg>
+                  Stop generating
+                </button>
+              </div>
+            </div>
           )}
           {isStreaming && !streamingContent && (
             <div className="flex gap-4">
               <div className="mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/10">
                 <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
               </div>
-              <div className="flex items-center gap-2 rounded-2xl rounded-bl-md border border-border/60 bg-card px-4 py-3 shadow-sm">
+              <div className="flex items-center gap-3 rounded-2xl rounded-bl-md border border-border/60 bg-card px-4 py-3 shadow-sm">
                 <div className="flex gap-1">
                   <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/60 [animation-delay:0ms]" />
                   <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/60 [animation-delay:150ms]" />
                   <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/60 [animation-delay:300ms]" />
                 </div>
+                <button
+                  onClick={handleCancelGeneration}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2" /></svg>
+                  Stop
+                </button>
               </div>
             </div>
           )}

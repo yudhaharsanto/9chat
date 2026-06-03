@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
 
+const GENERATION_TIMEOUT_MS = 60 * 1000; // 60 seconds timeout for generation
+
 export const runtime = "nodejs";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
@@ -38,6 +40,7 @@ interface GenerationState {
   content: string;
   status: "generating" | "done" | "failed";
   callbacks: Set<(chunk: string, status: string) => void>;
+  controller: AbortController;
 }
 
 if (!(globalThis as unknown as { __activeGenerations?: Map<string, GenerationState> }).__activeGenerations) {
@@ -64,16 +67,23 @@ async function runGeneration(
   userId?: string,
   conversationId?: string,
 ) {
-  const gen: GenerationState = { content: "", status: "generating", callbacks: new Set() };
+  const controller = new AbortController();
+  const gen: GenerationState = { content: "", status: "generating", callbacks: new Set(), controller };
   activeGenerations.set(messageId, gen);
 
   let lastFlushLen = 0;
+
+  // Auto-timeout: abort if generation takes too long
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, GENERATION_TIMEOUT_MS);
 
   try {
     const response = await fetch(`${routerUrl}/v1/chat/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${routerKey}` },
       body: JSON.stringify({ messages: apiMessages, model, stream: true }),
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -144,13 +154,26 @@ async function runGeneration(
         output_tokens: outputTokens,
       }).catch(() => {});
     }
-  } catch {
+  } catch (err) {
+    const isAbort = err instanceof DOMException && err.name === "AbortError";
     gen.status = "failed";
-    await flushToDb(messageId, gen.content, "failed");
+    const failContent = gen.content || (isAbort ? "[Generation timed out]" : "[Generation failed]");
+    await flushToDb(messageId, failContent, "failed");
   } finally {
+    clearTimeout(timeoutId);
     emit(gen, "");
     activeGenerations.delete(messageId);
   }
+}
+
+// ── Cancel a running generation ──
+function cancelGeneration(messageId: string): boolean {
+  const gen = activeGenerations.get(messageId);
+  if (gen) {
+    gen.controller.abort();
+    return true;
+  }
+  return false;
 }
 
 // ── Convert message images ──

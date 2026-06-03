@@ -52,6 +52,7 @@ interface ChatMessageProps {
   onRetry?: () => void;
   onEdit?: () => void;
   createdAt?: string;
+  status?: "generating" | "done" | "failed";
 }
 
 function formatTimestamp(iso: string): string {
@@ -70,7 +71,7 @@ function formatTimestamp(iso: string): string {
   }
 }
 
-export function ChatMessage({ role, content, isStreaming, onRetry, onEdit, createdAt }: ChatMessageProps) {
+export function ChatMessage({ role, content, isStreaming, onRetry, onEdit, createdAt, status }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const isUser = role === "user";
@@ -175,6 +176,12 @@ export function ChatMessage({ role, content, isStreaming, onRetry, onEdit, creat
           <div className="flex items-center gap-2 align-center">
             {createdAt && (
               <span className="ml-1 text-[10px] text-muted-foreground/40">{formatTimestamp(createdAt)}</span>
+            )}
+            {status === "failed" && (
+              <span className="ml-1 flex items-center gap-1 text-[10px] text-red-500">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                Failed
+              </span>
             )}
             {/* Actions */}
             {!isStreaming && content && (
