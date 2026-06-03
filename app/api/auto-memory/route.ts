@@ -219,7 +219,9 @@ export async function POST(req: NextRequest) {
     // Find existing memory in same category + same scope (global vs room)
     const match = existingRows.find((r) => {
       if (r.category !== mem.category) return false;
-      if (r.conversation_id !== convId) return false;
+      // Normalize null/empty comparison
+      const rConvId = r.conversation_id || null;
+      if (rConvId !== convId) return false;
       return true; // Same category+scope — we'll append to this one
     });
 
