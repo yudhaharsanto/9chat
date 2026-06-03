@@ -68,10 +68,10 @@ function extractMemoriesBasic(userMessage: string): ExtractedMemory[] {
   const results: ExtractedMemory[] = [];
 
   const prefPatterns = [
-    /(?:i (?:prefer|like|love|enjoy|hate|dislike))\s+(.{10,80})/i,
-    /(?:saya (?:lebih suka|suka|senang|benci))\s+(.{10,80})/i,
-    /(?:aku (?:lebih suka|suka|senang|benci))\s+(.{10,80})/i,
-    /(?:lebih suka|paling suka)\s+(.{5,80})/i,
+    /(?:i (?:prefer|like|love|enjoy|hate|dislike))\s+(.{5,80})/i,
+    /(?:saya (?:lebih suka|suka|senang|benci))\s+(.{5,80})/i,
+    /(?:aku (?:lebih suka|suka|senang|benci))\s+(.{5,80})/i,
+    /(?:lebih suka|paling suka)\s+(.{3,80})/i,
   ];
   for (const p of prefPatterns) {
     const m = userMessage.match(p);
@@ -96,6 +96,8 @@ function extractMemoriesBasic(userMessage: string): ExtractedMemory[] {
     /(?:namamu|kamu.*(?:bernama|namanya))\s+([A-Z][a-z]{1,30})/i,
     /(?:panggil.*kamu|kamu.*panggil)\s+([A-Z][a-z]{1,30})/i,
     /kamu\s+([A-Z][a-z]{2,20})\s+(?:ya|aja|saja)/i,
+    /(?:nama gue|gue|gw)\s+([A-Z][a-z]{1,30})/i,
+    /(?:panggil (?:gue|gw|aku))\s+([A-Z][a-z]{1,30})/i,
   ];
   for (const p of namePatterns) {
     const m = userMessage.match(p);
@@ -103,11 +105,11 @@ function extractMemoriesBasic(userMessage: string): ExtractedMemory[] {
   }
 
   const projPatterns = [
-    /(?:i'm (?:building|working on|developing|creating))\s+(.{10,80})/i,
-    /(?:saya (?:sedang )?(?:membuat|mengerjakan|membangun))\s+(.{10,80})/i,
-    /(?:aku (?:sedang )?(?:membuat|mengerjakan|membangun))\s+(.{10,80})/i,
-    /(?:my project|project saya|project ku)\s+(?:is |adalah )?(.{10,80})/i,
-    /(?:lagi (?:bikin|buatin|kerja))\s+(.{10,80})/i,
+    /(?:i'm (?:building|working on|developing|creating))\s+(.{3,80})/i,
+    /(?:saya (?:sedang )?(?:membuat|mengerjakan|membangun))\s+(.{3,80})/i,
+    /(?:aku (?:sedang )?(?:membuat|mengerjakan|membangun))\s+(.{3,80})/i,
+    /(?:my project|project saya|project ku)\s+(?:is |adalah )?(.{3,80})/i,
+    /(?:lagi (?:bikin|buatin|kerja))\s+(.{3,80})/i,
   ];
   for (const p of projPatterns) {
     const m = userMessage.match(p);
@@ -130,7 +132,7 @@ async function extractMemoriesAI(
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
 
-    const response = await fetch(`${routerUrl}/v1/chat/completions`, {
+    const response = await fetch(`${routerUrl}/chat/completions`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${routerKey}` },
       body: JSON.stringify({
