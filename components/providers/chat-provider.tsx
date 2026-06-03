@@ -154,17 +154,22 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, [isReady, userId, loadConversations, activeProject]);
 
   // ── Memory ──
-  // Parse memory content — handles both JSON {text, source, updatedAt} and legacy plain text
+  // Parse memory content — handles {texts: [...]}, old {text: "..."}, and legacy plain text
   const parseMemoryText = (raw: string): string => {
     try {
       const parsed = JSON.parse(raw);
+      // New format: {texts: ["fakta1", "fakta2"]}
+      if (parsed && Array.isArray(parsed.texts)) return parsed.texts.join("\n");
+      // Old format: {text: "..."}
       if (parsed && typeof parsed.text === "string") return parsed.text;
     } catch { /* legacy plain text */ }
     return raw;
   };
 
   const serializeMemoryContent = (text: string, source: "auto" | "manual" = "manual"): string => {
-    return JSON.stringify({ text, source, updatedAt: new Date().toISOString() });
+    // Split by newlines to support multiple facts in one memory
+    const items = text.split("\n").map((s) => s.trim()).filter(Boolean);
+    return JSON.stringify({ texts: items.length > 0 ? items : [text], source, updatedAt: new Date().toISOString() });
   };
 
   const loadMemories = useCallback(async (conversationId?: string) => {

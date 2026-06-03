@@ -37,7 +37,7 @@ interface MemoryRow {
 // ── Content helpers ──
 
 interface MemoryContent {
-  text: string;
+  texts: string[];
   source: string;
   updatedAt: string;
 }
@@ -45,13 +45,25 @@ interface MemoryContent {
 function parseContent(raw: string): MemoryContent {
   try {
     const parsed = JSON.parse(raw);
-    if (parsed && typeof parsed.text === "string") return parsed as MemoryContent;
+    // New format: {texts: [...], source, updatedAt}
+    if (parsed && Array.isArray(parsed.texts)) return parsed as MemoryContent;
+    // Old format: {text: "...", source, updatedAt}
+    if (parsed && typeof parsed.text === "string") return { texts: [parsed.text], source: parsed.source || "legacy", updatedAt: parsed.updatedAt || "" };
   } catch { /* legacy plain text */ }
-  return { text: raw, source: "legacy", updatedAt: "" };
+  return { texts: [raw], source: "legacy", updatedAt: "" };
 }
 
-function serializeContent(text: string, source: "auto" | "manual" = "auto"): string {
-  return JSON.stringify({ text, source, updatedAt: new Date().toISOString() });
+function serializeContent(texts: string[], source: "auto" | "manual" = "auto"): string {
+  return JSON.stringify({ texts, source, updatedAt: new Date().toISOString() });
+}
+
+function appendToContent(existing: string, newText: string): string {
+  const parsed = parseContent(existing);
+  // Check if similar text already exists
+  const alreadyHas = parsed.texts.some((t) => isSimilar(t, newText));
+  if (alreadyHas) return existing; // No change needed
+  parsed.texts.push(newText);
+  return serializeContent(parsed.texts, parsed.source as "auto" | "manual");
 }
 
 function isSimilar(a: string, b: string): boolean {
@@ -228,67 +240,47 @@ export async function POST(req: NextRequest) {
     const match = existingRows.find((r) => {
       if (r.category !== mem.category) return false;
       if (r.conversation_id !== convId) return false;
-      const parsed = parseContent(r.content);
-      return isSimilar(parsed.text, mem.content);
+      return true; // Same category+scope — we'll append to this one
     });
 
     if (match) {
-      // Update existing memory with new content
-      const { error } = await supabase
-        .from("user_memory")
-        .update({
-          content: serializeContent(mem.content, "auto"),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", match.id);
-
-      if (!error) {
-        saved++;
-        // Update local cache so subsequent iterations see the new content
-        match.content = serializeContent(mem.content, "auto");
-      } else {
-      }
-    } else {
-      // Find exact category+scope match (same category, same convId, not similar)
-      const existingExact = existingRows.find(
-        (r) => r.category === mem.category && r.conversation_id === convId,
-      );
-
-      if (existingExact) {
-        // Same category+scope exists but different content → update it
+      // Append new fact to existing memory (skip if similar already exists)
+      const updatedContent = appendToContent(match.content, mem.content);
+      if (updatedContent !== match.content) {
+        // Content changed — update DB
         const { error } = await supabase
           .from("user_memory")
           .update({
-            content: serializeContent(mem.content, "auto"),
+            content: updatedContent,
             updated_at: new Date().toISOString(),
           })
-          .eq("id", existingExact.id);
+          .eq("id", match.id);
 
         if (!error) {
           saved++;
-          existingExact.content = serializeContent(mem.content, "auto");
-        } else {
+          match.content = updatedContent;
         }
       } else {
-        // New memory — insert
-        const row: Record<string, unknown> = {
-          user_id: userId,
-          content: serializeContent(mem.content, "auto"),
-          category: mem.category,
-        };
-        if (convId) row.conversation_id = convId;
+        // Similar text already exists — skip
+      }
+    } else {
+      // New memory — insert with single-item array
+      const row: Record<string, unknown> = {
+        user_id: userId,
+        content: serializeContent([mem.content], "auto"),
+        category: mem.category,
+      };
+      if (convId) row.conversation_id = convId;
 
-        const { data: inserted, error } = await supabase
-          .from("user_memory")
-          .insert(row)
-          .select("id, content, category, conversation_id")
-          .single();
+      const { data: inserted, error } = await supabase
+        .from("user_memory")
+        .insert(row)
+        .select("id, content, category, conversation_id")
+        .single();
 
-        if (!error && inserted) {
-          saved++;
-          existingRows.push(inserted as MemoryRow);
-        } else {
-        }
+      if (!error && inserted) {
+        saved++;
+        existingRows.push(inserted as MemoryRow);
       }
     }
   }
