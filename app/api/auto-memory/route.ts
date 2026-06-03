@@ -32,46 +32,26 @@ interface MemoryRow {
   content: string;
   category: string;
   conversation_id: string | null;
-}
-
-// ── Content helpers ──
-
-interface MemoryContent {
-  texts: string[];
   source: string;
-  updatedAt: string;
 }
 
-function parseContent(raw: string): MemoryContent {
-  try {
-    const parsed = JSON.parse(raw);
-    // New format: {texts: [...], source, updatedAt}
-    if (parsed && Array.isArray(parsed.texts)) return parsed as MemoryContent;
-    // Old format: {text: "...", source, updatedAt}
-    if (parsed && typeof parsed.text === "string") return { texts: [parsed.text], source: parsed.source || "legacy", updatedAt: parsed.updatedAt || "" };
-  } catch { /* legacy plain text */ }
-  return { texts: [raw], source: "legacy", updatedAt: "" };
-}
-
-function serializeContent(texts: string[], source: "auto" | "manual" = "auto"): string {
-  return JSON.stringify({ texts, source, updatedAt: new Date().toISOString() });
-}
-
-function appendToContent(existing: string, newText: string): string {
-  const parsed = parseContent(existing);
-  // Check if similar text already exists
-  const alreadyHas = parsed.texts.some((t) => isSimilar(t, newText));
-  if (alreadyHas) return existing; // No change needed
-  parsed.texts.push(newText);
-  return serializeContent(parsed.texts, parsed.source as "auto" | "manual");
-}
-
+// ── Similarity check ──
 function isSimilar(a: string, b: string): boolean {
   const wordsA = a.toLowerCase().split(/\s+/).filter(Boolean);
   const wordsB = b.toLowerCase().split(/\s+/).filter(Boolean);
   if (wordsA.length === 0 || wordsB.length === 0) return false;
   const overlap = wordsA.filter((w) => wordsB.includes(w)).length;
   return overlap / Math.min(wordsA.length, wordsB.length) > 0.6;
+}
+
+// ── Append to multiline content ──
+function appendToContent(existing: string, newText: string): string {
+  const lines = existing.split("\n").map((s) => s.trim()).filter(Boolean);
+  // Check if similar line already exists
+  const alreadyHas = lines.some((t) => isSimilar(t, newText));
+  if (alreadyHas) return existing;
+  lines.push(newText);
+  return lines.join("\n");
 }
 
 // ── Rule-based extraction (fallback) ──
@@ -227,7 +207,7 @@ export async function POST(req: NextRequest) {
   // Fetch existing memories for this user
   const { data: existing } = await supabase
     .from("user_memory")
-    .select("id, content, category, conversation_id")
+    .select("id, content, category, conversation_id, source")
     .eq("user_id", userId);
 
   const existingRows: MemoryRow[] = existing || [];
@@ -267,8 +247,9 @@ export async function POST(req: NextRequest) {
       // New memory — insert with single-item array
       const row: Record<string, unknown> = {
         user_id: userId,
-        content: serializeContent([mem.content], "auto"),
+        content: mem.content,
         category: mem.category,
+        source: "auto",
       };
       if (convId) row.conversation_id = convId;
 

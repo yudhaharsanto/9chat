@@ -154,23 +154,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, [isReady, userId, loadConversations, activeProject]);
 
   // ── Memory ──
-  // Parse memory content — handles {texts: [...]}, old {text: "..."}, and legacy plain text
+  // Memory content is plain text. Multiple facts stored as newline-separated lines.
   const parseMemoryText = (raw: string): string => {
+    // Legacy: try to parse old JSON format
     try {
       const parsed = JSON.parse(raw);
-      // New format: {texts: ["fakta1", "fakta2"]}
       if (parsed && Array.isArray(parsed.texts)) return parsed.texts.join("\n");
-      // Old format: {text: "..."}
       if (parsed && typeof parsed.text === "string") return parsed.text;
-    } catch { /* legacy plain text */ }
+    } catch { /* plain text — good */ }
     return raw;
   };
 
-  const serializeMemoryContent = (text: string, source: "auto" | "manual" = "manual"): string => {
-    // Split by newlines to support multiple facts in one memory
-    const items = text.split("\n").map((s) => s.trim()).filter(Boolean);
-    return JSON.stringify({ texts: items.length > 0 ? items : [text], source, updatedAt: new Date().toISOString() });
-  };
 
   const loadMemories = useCallback(async (conversationId?: string) => {
     if (!isReady || !userId) return;
@@ -188,7 +182,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const addMemory = useCallback(async (content: string, category = "general", conversationId?: string) => {
     if (!isReady || !userId) return;
     const supabase = createClient();
-    const row: Record<string, unknown> = { user_id: userId, content: serializeMemoryContent(content, "manual"), category };
+    const row: Record<string, unknown> = { user_id: userId, content, category, source: "manual" };
     if (conversationId) row.conversation_id = conversationId;
     const { data } = await supabase.from("user_memory").insert(row).select("*").single();
     if (data) setMemories((prev) => [data, ...prev]);
@@ -197,10 +191,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const updateMemory = useCallback(async (id: string, content: string, category?: string) => {
     if (!isReady) return;
     const supabase = createClient();
-    const update: Record<string, unknown> = { content: serializeMemoryContent(content, "manual"), updated_at: new Date().toISOString() };
+    const update: Record<string, unknown> = { content, updated_at: new Date().toISOString() };
     if (category) update.category = category;
     await supabase.from("user_memory").update(update).eq("id", id);
-    setMemories((prev) => prev.map((m) => m.id === id ? { ...m, content: serializeMemoryContent(content, "manual"), ...(category ? { category } : {}) } as UserMemory : m));
+    setMemories((prev) => prev.map((m) => m.id === id ? { ...m, content, ...(category ? { category } : {}) } as UserMemory : m));
   }, [isReady]);
 
   const deleteMemory = useCallback(async (id: string) => {

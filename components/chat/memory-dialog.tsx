@@ -4,15 +4,13 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Brain, X } from "lucide-react";
 
-/** Parse memory content — handles {texts: [...]}, old {text: "..."}, and legacy plain text */
+/** Memory content is plain text. Parse legacy JSON if present. */
 function parseMemoryText(raw: string): string {
   try {
     const parsed = JSON.parse(raw);
-    // New format: {texts: ["fakta1", "fakta2"]}
     if (parsed && Array.isArray(parsed.texts)) return parsed.texts.join("\n");
-    // Old format: {text: "..."}
     if (parsed && typeof parsed.text === "string") return parsed.text;
-  } catch { /* legacy plain text */ }
+  } catch { /* plain text — good */ }
   return raw;
 }
 

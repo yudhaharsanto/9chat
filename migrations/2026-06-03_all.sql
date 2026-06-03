@@ -39,15 +39,34 @@ CREATE INDEX IF NOT EXISTS idx_user_memory_conversation ON user_memory(conversat
 ALTER TABLE messages ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'done';
 CREATE INDEX IF NOT EXISTS idx_messages_status ON messages(status) WHERE status = 'generating';
 
--- ── 5. Memory Refactor: JSON content + upsert ──────
--- Convert existing plain text content to JSON format
-UPDATE user_memory
-SET content = json_build_object(
-  'text', content,
-  'source', 'manual',
-  'updatedAt', COALESCE(updated_at::text, created_at::text, now()::text)
-)::text
-WHERE content NOT LIKE '{"text":%';
+-- ── 5. Memory Refactor: plain text + source column ──
+-- Add source column to track auto vs manual memories
+ALTER TABLE user_memory ADD COLUMN IF NOT EXISTS source TEXT DEFAULT 'manual';
+
+-- Convert any existing JSON content back to plain text
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM user_memory WHERE content LIKE '{%}' LIMIT 1) THEN
+    UPDATE user_memory
+    SET content = CASE
+      WHEN content LIKE '{"texts":%' THEN
+        -- New format: {texts: ["a", "b"]}
+        array_to_string(
+          ARRAY(SELECT json_array_elements_text(content::json->'texts')),
+          E'\n'
+        )
+      WHEN content LIKE '{"text":%' THEN
+        -- Old format: {text: "..."}
+        content::json->>'text'
+      ELSE content
+    END,
+    source = CASE
+      WHEN content LIKE '{"source":"auto"%}' THEN 'auto'
+      ELSE 'manual'
+    END
+    WHERE content LIKE '{%}';
+  END IF;
+END $$;
 
 -- Unique constraint: one memory per (user, category, conversation)
 CREATE UNIQUE INDEX IF NOT EXISTS idx_user_memory_unique_scope

@@ -240,6 +240,7 @@ CREATE TABLE user_memory (
   conversation_id UUID REFERENCES conversations(id) ON DELETE CASCADE DEFAULT NULL,
   content TEXT NOT NULL,
   category TEXT DEFAULT 'general' CHECK (category IN ('preference', 'project', 'personal', 'technical', 'general')),
+  source TEXT DEFAULT 'manual' CHECK (source IN ('auto', 'manual', 'legacy')),
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -279,6 +280,10 @@ CREATE INDEX idx_uploaded_images_user ON uploaded_images(user_id);
 CREATE INDEX idx_user_memory_user ON user_memory(user_id);
 CREATE INDEX idx_user_memory_category ON user_memory(category);
 CREATE INDEX idx_user_memory_conversation ON user_memory(conversation_id);
+
+-- Unique constraint: one memory per (user, category, conversation)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_memory_unique_scope
+  ON user_memory(user_id, category, COALESCE(conversation_id::text, '__global__'));
 
 -- =====================
 -- 11. ROW LEVEL SECURITY
