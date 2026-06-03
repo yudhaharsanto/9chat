@@ -79,7 +79,7 @@ export function ChatMessage({ role, content, isStreaming, onRetry, onEdit, creat
 
   return (
     <div>
-      <div className={cn("group/msg relative animate-in fade-in-0 slide-in-from-bottom-1 duration-300", isUser ? "flex items-start justify-end gap-2" : "flex gap-4")}>
+      <div className={cn("group/msg relative animate-in fade-in-0 slide-in-from-bottom-1 duration-300", isUser ? "flex items-start justify-end gap-1.5" : "flex gap-3")}>
         {/* Assistant avatar */}
         {!isUser && (
           <div className="mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/10">
@@ -91,7 +91,7 @@ export function ChatMessage({ role, content, isStreaming, onRetry, onEdit, creat
         <div className={cn("relative", isUser ? "max-w-[85%] order-1" : "max-w-[90%]")}>
           <div
             className={cn(
-              "rounded-2xl px-4 py-3 text-[0.9rem] leading-relaxed relative",
+              "rounded-2xl px-3.5 py-2.5 text-[0.875rem] leading-relaxed relative",
               isUser
                 ? "bg-muted text-foreground rounded-br-md"
                 : "bg-card border border-border/60 rounded-bl-md shadow-sm",

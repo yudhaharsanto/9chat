@@ -30,7 +30,7 @@ export function ConversationSidebar({ collapsed }: ConversationSidebarProps) {
     selectConversation, createConversation, deleteConversation,
     renameConversation, setActiveProject, setActiveAgent,
     togglePinConversation,
-    memories, addMemory, updateMemory, deleteMemory,
+    memories, addMemory, updateMemory, deleteMemory, loadMemories, parseMemoryText,
   } = useChatContext();
   const { currentUser, logout } = useAuth();
   const { modelAliases, enabledModels, modelsFilterActive } = useSettings();
@@ -241,7 +241,7 @@ export function ConversationSidebar({ collapsed }: ConversationSidebarProps) {
                         <div key={mem.id} className="group/mem rounded-lg px-2.5 py-1.5 hover:bg-accent/50 transition-colors">
                           <div className="flex items-start gap-2">
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs leading-relaxed break-words">{mem.content}</p>
+                              <p className="text-xs leading-relaxed break-words">{parseMemoryText(mem.content)}</p>
                               <span className="inline-block mt-0.5 rounded bg-muted/50 px-1 py-0.5 text-[9px] text-muted-foreground">{mem.category}</span>
                             </div>
                             <div className="flex items-center gap-0.5 opacity-0 group-hover/mem:opacity-100 transition-opacity">
@@ -269,7 +269,7 @@ export function ConversationSidebar({ collapsed }: ConversationSidebarProps) {
                         <div key={mem.id} className="group/mem rounded-lg px-2.5 py-1.5 hover:bg-accent/50 transition-colors">
                           <div className="flex items-start gap-2">
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs leading-relaxed break-words">{mem.content}</p>
+                              <p className="text-xs leading-relaxed break-words">{parseMemoryText(mem.content)}</p>
                               <span className="inline-block mt-0.5 rounded bg-primary/10 px-1 py-0.5 text-[9px] text-primary/80">room</span>
                             </div>
                             <div className="flex items-center gap-0.5 opacity-0 group-hover/mem:opacity-100 transition-opacity">

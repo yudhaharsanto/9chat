@@ -50,7 +50,7 @@ export function SkillSelector({ skills, selectedSkill, onSelectSkill }: SkillSel
           variant="ghost"
           role="combobox"
           aria-expanded={open}
-          className="h-8 gap-1.5 rounded-full border border-border/60 bg-card/50 px-2.5 text-xs font-medium text-muted-foreground backdrop-blur-sm transition-all hover:bg-card hover:shadow-sm hover:text-foreground"
+          className="h-8 gap-1.5 rounded-full border border-border/60 bg-card/50 px-2.5 text-xs font-medium text-muted-foreground backdrop-blur-sm transition-all hover:bg-card hover:shadow-sm hover:text-foreground whitespace-nowrap"
         >
           <Zap className="h-3.5 w-3.5" />
           <span>Skill</span>

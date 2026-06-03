@@ -22,7 +22,7 @@ export function ChatArea() {
   const {
     activeConversation, messages, isLoadingMessages,
     createConversation, selectConversation, addMessage, deleteMessage, setMessages, renameConversation, updateConversationModel,
-    activeProject, activeAgent, knowledgeSources, skills, memories, addMemory,
+    activeProject, activeAgent, knowledgeSources, skills, memories, addMemory, loadMemories,
   } = useChatContext();
   const { modelAliases, modelImageSupport, settings } = useSettings();
   const { currentUser } = useAuth();
@@ -75,7 +75,10 @@ export function ChatArea() {
     })
       .then((r) => r.json())
       .then((d) => {
-        if (d.saved > 0) toast.success(`✨ ${d.saved} memory saved`, { duration: 2000 });
+        if (d.saved > 0) {
+          toast.success(`✨ ${d.saved} memory saved`, { duration: 2000 });
+          loadMemories(convId || undefined);
+        }
       })
       .catch(() => {});
   };
@@ -653,7 +656,7 @@ export function ChatArea() {
   if (!activeConversation && messages.length === 0) {
     return (
       <div className="flex flex-1 flex-col">
-        <div className="flex items-center justify-center gap-2 border-b border-border/40 bg-background/60 backdrop-blur-sm py-2.5">
+        <div className="flex items-center justify-center gap-2 border-b border-border/40 bg-background/60 backdrop-blur-sm py-2.5 px-2 overflow-x-auto">
           <ModelSelector selectedModel={selectedModel} onSelectModel={setSelectedModel} />
           <SkillSelector skills={skills} selectedSkill={selectedSkill} onSelectSkill={setSelectedSkill} />
           <KnowledgeSelector knowledgeSources={knowledgeSources} selectedKnowledge={selectedKnowledge} onToggleKnowledge={(k) => setSelectedKnowledge((prev) => prev.some((sk) => sk.id === k.id) ? prev.filter((sk) => sk.id !== k.id) : [...prev, k])} />
@@ -754,7 +757,7 @@ export function ChatArea() {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Header bar */}
-      <div className="flex items-center justify-center gap-2 border-b border-border/40 bg-background/60 backdrop-blur-sm py-2.5">
+      <div className="flex items-center justify-center gap-2 border-b border-border/40 bg-background/60 backdrop-blur-sm py-2.5 px-2 overflow-x-auto">
         <ModelSelector selectedModel={selectedModel} onSelectModel={(model) => {
           setSelectedModel(model);
           if (activeConversation?.id) updateConversationModel(activeConversation.id, model);
@@ -765,7 +768,7 @@ export function ChatArea() {
 
       {/* Messages */}
       <ScrollArea className="flex-1 min-h-0" ref={scrollRef}>
-        <div className="w-full space-y-1 px-4 py-6">
+        <div className="w-full space-y-0.5 px-4 py-4">
           {(() => {
             // Build display list with branch awareness
             const display: React.ReactNode[] = [];

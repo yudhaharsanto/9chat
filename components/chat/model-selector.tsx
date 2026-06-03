@@ -71,7 +71,7 @@ export function ModelSelector({ selectedModel, onSelectModel }: ModelSelectorPro
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="inline-flex h-8 items-center gap-2 rounded-full border border-border/60 bg-card/50 px-3 text-xs font-medium backdrop-blur-sm transition-all hover:bg-card hover:shadow-sm cursor-pointer">
+      <PopoverTrigger className="inline-flex h-8 items-center gap-2 rounded-full border border-border/60 bg-card/50 px-3 text-xs font-medium backdrop-blur-sm transition-all hover:bg-card hover:shadow-sm cursor-pointer whitespace-nowrap">
           <Cpu className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="max-w-[200px] truncate">
             {loading ? "Loading..." : selected ? getDisplayName(selected.id) : error ? "Error" : "Select model"}
