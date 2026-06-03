@@ -26,6 +26,7 @@ interface ChatContextType {
   deleteConversation: (id: string) => Promise<void>;
   renameConversation: (id: string, title: string) => Promise<void>;
   updateConversationModel: (id: string, model: string) => Promise<void>;
+  togglePinConversation: (id: string, pinned: boolean) => Promise<void>;
   addMessage: (msg: Omit<Message, "id" | "created_at">) => Promise<Message | null>;
   deleteMessage: (id: string) => Promise<void>;
   setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
@@ -47,6 +48,7 @@ interface ChatContextType {
   addMemory: (content: string, category?: string, conversationId?: string) => Promise<void>;
   updateMemory: (id: string, content: string, category?: string) => Promise<void>;
   deleteMemory: (id: string) => Promise<void>;
+  parseMemoryText: (raw: string) => string;
 }
 
 const ChatContext = createContext<ChatContextType>({
@@ -55,11 +57,11 @@ const ChatContext = createContext<ChatContextType>({
   renameProject: async () => {}, setActiveProject: () => {}, verifyProjectPassword: async () => false,
   conversations: [], activeConversation: null, messages: [], isLoadingMessages: false,
   loadConversations: async () => {}, createConversation: async () => "", selectConversation: async () => {},
-  deleteConversation: async () => {}, renameConversation: async () => {}, updateConversationModel: async () => {},
+  deleteConversation: async () => {}, renameConversation: async () => {}, updateConversationModel: async () => {}, togglePinConversation: async () => {},
   addMessage: async () => null, deleteMessage: async () => {}, setMessages: () => {}, setActiveConversation: () => {},  agents: [], activeAgent: null, loadAgents: async () => {}, setActiveAgent: () => {},
   skills: [], loadSkills: async () => {},
   knowledgeSources: [], loadKnowledge: async () => {},
-  memories: [], loadMemories: async () => {}, addMemory: async () => {}, updateMemory: async () => {}, deleteMemory: async () => {},
+  memories: [], loadMemories: async () => {}, addMemory: async () => {}, updateMemory: async () => {}, deleteMemory: async () => {}, parseMemoryText: (s) => s,
 });
 
 export function ChatProvider({ children }: { children: React.ReactNode }) {
@@ -130,7 +132,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     if (projectId) query = query.eq("project_id", projectId);
     else query = query.is("project_id", null);
     const { data } = await query;
-    if (data) setConversations(data);
+    if (data) {
+      const sorted = data.sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      });
+      setConversations(sorted);
+    }
   }, [isReady, userId]);
 
   const createConversation = useCallback(async (model: string, projectId?: string, agentId?: string): Promise<string> => {
@@ -145,6 +154,19 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, [isReady, userId, loadConversations, activeProject]);
 
   // ── Memory ──
+  // Parse memory content — handles both JSON {text, source, updatedAt} and legacy plain text
+  const parseMemoryText = (raw: string): string => {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.text === "string") return parsed.text;
+    } catch { /* legacy plain text */ }
+    return raw;
+  };
+
+  const serializeMemoryContent = (text: string, source: "auto" | "manual" = "manual"): string => {
+    return JSON.stringify({ text, source, updatedAt: new Date().toISOString() });
+  };
+
   const loadMemories = useCallback(async (conversationId?: string) => {
     if (!isReady || !userId) return;
     const supabase = createClient();
@@ -154,14 +176,14 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     } else {
       query = query.is("conversation_id", null);
     }
-    const { data } = await query.order("created_at", { ascending: false });
+    const { data } = await query.order("updated_at", { ascending: false });
     if (data) setMemories(data);
   }, [isReady, userId]);
 
   const addMemory = useCallback(async (content: string, category = "general", conversationId?: string) => {
     if (!isReady || !userId) return;
     const supabase = createClient();
-    const row: Record<string, unknown> = { user_id: userId, content, category };
+    const row: Record<string, unknown> = { user_id: userId, content: serializeMemoryContent(content, "manual"), category };
     if (conversationId) row.conversation_id = conversationId;
     const { data } = await supabase.from("user_memory").insert(row).select("*").single();
     if (data) setMemories((prev) => [data, ...prev]);
@@ -170,10 +192,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const updateMemory = useCallback(async (id: string, content: string, category?: string) => {
     if (!isReady) return;
     const supabase = createClient();
-    const update: Record<string, unknown> = { content };
+    const update: Record<string, unknown> = { content: serializeMemoryContent(content, "manual"), updated_at: new Date().toISOString() };
     if (category) update.category = category;
     await supabase.from("user_memory").update(update).eq("id", id);
-    setMemories((prev) => prev.map((m) => m.id === id ? { ...m, content, ...(category ? { category } : {}) } as UserMemory : m));
+    setMemories((prev) => prev.map((m) => m.id === id ? { ...m, content: serializeMemoryContent(content, "manual"), ...(category ? { category } : {}) } as UserMemory : m));
   }, [isReady]);
 
   const deleteMemory = useCallback(async (id: string) => {
@@ -186,6 +208,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const selectConversation = useCallback(async (id: string) => {
     if (!isReady) return;
     setIsLoadingMessages(true);
+    localStorage.setItem("9chat_active_conv", id);
     const supabase = createClient();
     const [convRes, msgRes] = await Promise.all([
       supabase.from("conversations").select("*").eq("id", id).single(),
@@ -209,7 +232,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     if (!isReady) return;
     const supabase = createClient();
     await supabase.from("conversations").delete().eq("id", id);
-    if (activeConversation?.id === id) { setActiveConversation(null); setMessages([]); }
+    if (activeConversation?.id === id) { setActiveConversation(null); setMessages([]); localStorage.removeItem("9chat_active_conv"); }
     await loadConversations(activeProject?.id);
   }, [isReady, activeConversation, activeProject, loadConversations]);
 
@@ -226,6 +249,21 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     const supabase = createClient();
     await supabase.from("conversations").update({ model }).eq("id", id);
     setActiveConversation((p) => p && p.id === id ? { ...p, model } : p);
+  }, [isReady]);
+
+  const togglePinConversation = useCallback(async (id: string, pinned: boolean) => {
+    if (!isReady) return;
+    const supabase = createClient();
+    await supabase.from("conversations").update({ pinned }).eq("id", id);
+    setConversations((prev) => {
+      const updated = prev.map((c) => c.id === id ? { ...c, pinned } : c);
+      return updated.sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      });
+    });
+    setActiveConversation((p) => p && p.id === id ? { ...p, pinned } : p);
   }, [isReady]);
 
   const addMessage = useCallback(async (msg: Omit<Message, "id" | "created_at">): Promise<Message | null> => {
@@ -277,6 +315,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   }, [isReady, loadProjects, loadConversations, loadAgents, loadSkills, loadKnowledge, loadMemories]);
 
+  // Restore last active conversation from localStorage
+  useEffect(() => {
+    if (conversations.length > 0 && !activeConversation) {
+      const savedId = localStorage.getItem("9chat_active_conv");
+      if (savedId) {
+        const found = conversations.find((c) => c.id === savedId);
+        if (found) selectConversation(savedId);
+      }
+    }
+  }, [conversations, activeConversation, selectConversation]);
+
   useEffect(() => {
     if (isReady) {
       loadConversations(activeProject?.id);
@@ -289,11 +338,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     <ChatContext.Provider value={{
       projects, activeProject, loadProjects, createProject, deleteProject, renameProject, setActiveProject, verifyProjectPassword,
       conversations, activeConversation, messages, isLoadingMessages,
-      loadConversations, createConversation, selectConversation, deleteConversation, renameConversation, updateConversationModel, addMessage, deleteMessage, setMessages, setActiveConversation,
+      loadConversations, createConversation, selectConversation, deleteConversation, renameConversation, updateConversationModel, togglePinConversation, addMessage, deleteMessage, setMessages, setActiveConversation,
       agents, activeAgent, loadAgents, setActiveAgent,
       skills, loadSkills,
       knowledgeSources, loadKnowledge,
-      memories, loadMemories, addMemory, updateMemory, deleteMemory,
+      memories, loadMemories, addMemory, updateMemory, deleteMemory, parseMemoryText,
     }}>
       {children}
     </ChatContext.Provider>

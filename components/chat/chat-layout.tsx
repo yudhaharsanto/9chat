@@ -10,6 +10,7 @@ import { useAuth } from "@/components/providers/auth-provider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "next-themes";
 import Link from "next/link";
+import { TokenIndicator } from "@/components/chat/token-indicator";
 
 export function ChatLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -111,6 +112,7 @@ export function ChatLayout() {
           </div>
 
           <div className="flex items-center gap-0.5">
+            {currentUser && <TokenIndicator userId={currentUser.id} />}
             <Tooltip>
               <TooltipTrigger>
                 <Button

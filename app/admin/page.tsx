@@ -15,11 +15,13 @@ import {
   Shield, Eye, Lock, Unlock, Loader2, CheckCircle2, XCircle,
   Server, Cpu, ArrowLeft, Search, Settings, Key,
   Users, Bot, Zap, BookOpen, Plus, Trash2, Pencil, Save, HardDrive,
+  ImageIcon,
 } from "lucide-react";
 import type { ModelInfo, User as UserType, Agent, Skill, KnowledgeSource } from "@/lib/types";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { ModelMultiSelect } from "@/components/ui/model-multi-select";
+import { TokenUsageDialog } from "@/components/chat/token-usage-dialog";
 
 async function sha256(text: string): Promise<string> {
   const data = new TextEncoder().encode(text);
@@ -52,6 +54,7 @@ export default function AdminPage() {
   const [editSkill, setEditSkill] = useState<Partial<Skill> | null>(null);
   const [knowledge, setKnowledge] = useState<KnowledgeSource[]>([]);
   const [editKnowledge, setEditKnowledge] = useState<Partial<KnowledgeSource> | null>(null);
+  const [tokenDialogUser, setTokenDialogUser] = useState<UserType | null>(null);
 
   useEffect(() => { setForm(s.settings); }, [s.settings]);
   useEffect(() => {
@@ -103,6 +106,10 @@ export default function AdminPage() {
   };
 
   const toggleModel = (id: string) => s.setEnabledModels(s.enabledModels.includes(id) ? s.enabledModels.filter((m) => m !== id) : [...s.enabledModels, id]);
+  const toggleImageSupport = (id: string) => {
+    const current = s.modelImageSupport[id] ?? false;
+    s.setModelImageSupport({ ...s.modelImageSupport, [id]: !current });
+  };
   const getDisplayName = (modelId: string): string => {
     if (s.modelAliases[modelId]) return s.modelAliases[modelId];
     const parts = modelId.split("/");
@@ -263,7 +270,7 @@ export default function AdminPage() {
 
           <TabsContent value="models" className="space-y-4">
             <div className="rounded-xl border bg-card p-5 space-y-4">
-              <div className="flex items-center justify-between"><div><h3 className="text-sm font-semibold">Models</h3><p className="text-xs text-muted-foreground">Toggle visibility + set aliases</p></div><Badge variant="secondary" className="text-xs">{s.modelsFilterActive ? `${s.enabledModels.length}/${allModels.length}` : `All ${allModels.length}`}</Badge></div>
+              <div className="flex items-center justify-between"><div><h3 className="text-sm font-semibold">Models</h3><p className="text-xs text-muted-foreground">Toggle visibility + set aliases + image support</p></div><div className="flex items-center gap-2"><Badge variant="secondary" className="text-xs">{s.modelsFilterActive ? `${s.enabledModels.length}/${allModels.length}` : `All ${allModels.length}`}</Badge>{Object.values(s.modelImageSupport).filter(Boolean).length > 0 && <Badge variant="secondary" className="text-xs gap-1"><ImageIcon className="h-2.5 w-2.5" />{Object.values(s.modelImageSupport).filter(Boolean).length} img</Badge>}</div></div>
               <div className="flex items-center gap-2">
                 <div className="relative flex-1"><Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" /><Input placeholder="Search..." value={modelSearch} onChange={(e) => setModelSearch(e.target.value)} className="h-8 pl-8 text-xs" /></div>
                 <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => s.setEnabledModels(allModels.map((m) => m.id))}>All</Button>
@@ -274,6 +281,7 @@ export default function AdminPage() {
                 <div className="max-h-[500px] space-y-1 overflow-y-auto pr-1">
                   {filteredModels.map((m) => {
                     const on = !s.modelsFilterActive || s.enabledModels.includes(m.id);
+                    const imgOn = s.modelImageSupport[m.id] ?? false;
                     return (
                       <div key={m.id} className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 ${on ? "" : "opacity-40"}`}>
                         <Switch checked={on} onCheckedChange={() => toggleModel(m.id)} />
@@ -281,7 +289,10 @@ export default function AdminPage() {
                           <Input className="h-6 text-xs border-0 bg-transparent p-0 focus-visible:ring-0 font-medium" value={s.modelAliases[m.id] || ""} placeholder={getDisplayName(m.id)} onChange={(e) => s.setModelAliases({ ...s.modelAliases, [m.id]: e.target.value })} />
                           <p className="text-[10px] text-muted-foreground truncate">{m.id}</p>
                         </div>
-                        {m.supports_vision && <Badge variant="secondary" className="text-[10px]"><Eye className="h-2.5 w-2.5" /></Badge>}
+                        <div className="flex items-center gap-1.5">
+                          <ImageIcon className={`h-3.5 w-3.5 ${imgOn ? "text-primary" : "text-muted-foreground/40"}`} />
+                          <Switch checked={imgOn} onCheckedChange={() => toggleImageSupport(m.id)} />
+                        </div>
                       </div>
                     );
                   })}
@@ -314,6 +325,12 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1" onClick={() => setTokenDialogUser(u)}>
+                        <Zap className="h-3 w-3" />
+                        {(u.token_input_used || 0) + (u.token_output_used || 0) > 0
+                          ? `${((u.token_input_used || 0) + (u.token_output_used || 0)).toLocaleString()} tok`
+                          : "Tokens"}
+                      </Button>
                       <Switch checked={u.is_active} onCheckedChange={(v) => createClient().from("users").update({ is_active: v }).eq("id", u.id).then(loadUsers)} />
                       {u.role !== "admin" && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => createClient().from("users").delete().eq("id", u.id).then(() => { toast.success("Deleted"); loadUsers(); })}><Trash2 className="h-3.5 w-3.5" /></Button>}
                     </div>
@@ -432,6 +449,16 @@ export default function AdminPage() {
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Token Usage Dialog */}
+      {tokenDialogUser && (
+        <TokenUsageDialog
+          open={!!tokenDialogUser}
+          onClose={() => setTokenDialogUser(null)}
+          user={tokenDialogUser}
+          onUpdated={loadUsers}
+        />
+      )}
     </div>
   );
 }

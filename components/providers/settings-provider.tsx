@@ -15,6 +15,10 @@ interface ModelAlias {
   [modelId: string]: string;
 }
 
+interface ModelImageSupport {
+  [modelId: string]: boolean;
+}
+
 interface SettingsContextType {
   settings: Settings;
   updateSettings: (partial: Partial<Settings>) => void;
@@ -32,6 +36,9 @@ interface SettingsContextType {
   // Model aliases
   modelAliases: ModelAlias;
   setModelAliases: (aliases: ModelAlias) => Promise<void>;
+  // Model image support
+  modelImageSupport: ModelImageSupport;
+  setModelImageSupport: (support: ModelImageSupport) => Promise<void>;
   // Sync
   loadFromSupabase: () => Promise<void>;
 }
@@ -50,6 +57,8 @@ const SettingsContext = createContext<SettingsContextType>({
   modelsFilterActive: false,
   modelAliases: {},
   setModelAliases: async () => {},
+  modelImageSupport: {},
+  setModelImageSupport: async () => {},
   loadFromSupabase: async () => {},
 });
 
@@ -66,18 +75,21 @@ async function loadSettingsFromSupabase(): Promise<{
   patch: Partial<Settings>;
   enabledModels: string[] | null;
   modelAliases: ModelAlias;
+  modelImageSupport: ModelImageSupport;
 }> {
   const supabase = createClient();
   const patch: Partial<Settings> = {};
   let enabledModelsArr: string[] | null = null;
   let modelAliasesObj: ModelAlias = {};
+  let modelImageSupportObj: ModelImageSupport = {};
+
   const { data } = await supabase
     .from("app_settings")
     .select("key, value")
     .in("key", [
       "9router_url", "9router_api_key",
       "imgbb_api_key",
-      "enabled_models", "model_aliases",
+      "enabled_models", "model_aliases", "model_image_support",
     ]);
 
   if (data) {
@@ -92,9 +104,12 @@ async function loadSettingsFromSupabase(): Promise<{
     if (map["model_aliases"] && typeof map["model_aliases"] === "object") {
       modelAliasesObj = map["model_aliases"] as ModelAlias;
     }
+    if (map["model_image_support"] && typeof map["model_image_support"] === "object") {
+      modelImageSupportObj = map["model_image_support"] as ModelImageSupport;
+    }
   }
 
-  return { patch, enabledModels: enabledModelsArr, modelAliases: modelAliasesObj };
+  return { patch, enabledModels: enabledModelsArr, modelAliases: modelAliasesObj, modelImageSupport: modelImageSupportObj };
 }
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
@@ -105,6 +120,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [enabledModels, setEnabledModelsState] = useState<string[]>([]);
   const [modelsFilterActive, setModelsFilterActive] = useState(false);
   const [modelAliases, setModelAliasesState] = useState<ModelAlias>({});
+  const [modelImageSupport, setModelImageSupportState] = useState<ModelImageSupport>({});
 
   // ── Bootstrap ──
   useEffect(() => {
@@ -126,6 +142,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           setModelsFilterActive(false);
         }
         setModelAliasesState(result.modelAliases);
+        setModelImageSupportState(result.modelImageSupport);
       } catch {
         // Supabase might not be configured yet
       }
@@ -152,6 +169,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         setModelsFilterActive(false);
       }
       if (Object.keys(result.modelAliases).length > 0) setModelAliasesState(result.modelAliases);
+      if (Object.keys(result.modelImageSupport).length > 0) setModelImageSupportState(result.modelImageSupport);
     } catch {}
   }, []);
 
@@ -215,6 +233,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }, []);
 
+  // ── Model image support ──
+  const setModelImageSupport = useCallback(async (support: ModelImageSupport) => {
+    setModelImageSupportState(support);
+    try {
+      const supabase = createClient();
+      await supabase.from("app_settings").upsert({ key: "model_image_support", value: support }, { onConflict: "key" });
+    } catch {}
+  }, []);
+
   // isConfigured = only needs 9router (Supabase is always available via env)
   const isConfigured = !!(settings.routerUrl && settings.routerApiKey);
 
@@ -225,6 +252,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
         isAdmin: false, adminLogin: async () => false, adminLogout: () => {}, changeAdminPassword: async () => false,
         enabledModels: [], setEnabledModels: async () => {}, modelsFilterActive: false,
         modelAliases: {}, setModelAliases: async () => {},
+        modelImageSupport: {}, setModelImageSupport: async () => {},
         loadFromSupabase: async () => {},
       }}>
         {children}
@@ -238,6 +266,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       isAdmin, adminLogin, adminLogout, changeAdminPassword,
       enabledModels, setEnabledModels, modelsFilterActive,
       modelAliases, setModelAliases,
+      modelImageSupport, setModelImageSupport,
       loadFromSupabase,
     }}>
       {children}

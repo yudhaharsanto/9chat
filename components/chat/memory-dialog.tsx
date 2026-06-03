@@ -4,6 +4,15 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Brain, X } from "lucide-react";
 
+/** Parse memory content — handles both JSON {text, source, updatedAt} and legacy plain text */
+function parseMemoryText(raw: string): string {
+  try {
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed.text === "string") return parsed.text;
+  } catch { /* legacy plain text */ }
+  return raw;
+}
+
 interface MemoryDialogProps {
   open: boolean;
   onClose: () => void;
@@ -17,13 +26,14 @@ interface MemoryDialogProps {
 export function MemoryDialog({
   open, onClose, onSave, initialContent = "", initialCategory = "general", conversationTitle, mode = "add",
 }: MemoryDialogProps) {
-  const [content, setContent] = useState(initialContent);
+  const [content, setContent] = useState("");
   const [category, setCategory] = useState(initialCategory);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setContent(initialContent);
+      // Parse JSON content to get plain text for editing
+      setContent(parseMemoryText(initialContent));
       setCategory(initialCategory);
     }
   }, [open, initialContent, initialCategory]);

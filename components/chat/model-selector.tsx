@@ -18,7 +18,7 @@ interface ModelSelectorProps {
 }
 
 export function ModelSelector({ selectedModel, onSelectModel }: ModelSelectorProps) {
-  const { settings, enabledModels, modelsFilterActive, modelAliases } = useSettings();
+  const { settings, enabledModels, modelsFilterActive, modelAliases, modelImageSupport } = useSettings();
   const { currentUser } = useAuth();
   const [open, setOpen] = useState(false);
   const [allModels, setAllModels] = useState<ModelInfo[]>([]);
@@ -57,9 +57,10 @@ export function ModelSelector({ selectedModel, onSelectModel }: ModelSelectorPro
     ? allModels.filter((m) => enabledModels.includes(m.id))
     : allModels;
   const userAllowed = currentUser?.allowed_models;
-  const models = userAllowed && userAllowed.length > 0
+  const models = (userAllowed && userAllowed.length > 0
     ? adminFiltered.filter((m) => userAllowed.includes(m.id))
-    : adminFiltered;
+    : adminFiltered
+  ).sort((a, b) => getDisplayName(a.id).localeCompare(getDisplayName(b.id)));
 
   const filtered = search
     ? models.filter((m) => m.id.toLowerCase().includes(search.toLowerCase()) || getDisplayName(m.id).toLowerCase().includes(search.toLowerCase()))
@@ -75,7 +76,7 @@ export function ModelSelector({ selectedModel, onSelectModel }: ModelSelectorPro
           <span className="max-w-[200px] truncate">
             {loading ? "Loading..." : selected ? getDisplayName(selected.id) : error ? "Error" : "Select model"}
           </span>
-          {selected?.supports_vision && <Eye className="h-3 w-3 text-muted-foreground" />}
+          {selected && (modelImageSupport[selected.id] ?? false) && <Eye className="h-3 w-3 text-muted-foreground" />}
           <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-40" />
       </PopoverTrigger>
       <PopoverContent className="w-[380px] p-0 rounded-xl" align="center">
@@ -114,7 +115,7 @@ export function ModelSelector({ selectedModel, onSelectModel }: ModelSelectorPro
                       )}
                     </div>
                     <div className="flex items-center gap-1.5">
-                      {model.supports_vision && (
+                      {(modelImageSupport[model.id] ?? false) && (
                         <Badge variant="secondary" className="rounded-sm text-[10px] px-1.5 py-0">
                           <Eye className="h-2.5 w-2.5" />
                         </Badge>

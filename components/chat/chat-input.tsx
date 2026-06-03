@@ -3,7 +3,8 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Square, Loader2, ImageIcon, X, Pencil, Brain } from "lucide-react";
+import { Send, Square, Loader2, ImageIcon, X, Pencil, Brain, Globe } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -30,11 +31,15 @@ interface ChatInputProps {
   onEditCancel?: () => void;
   onMemoryClick?: () => void;
   conversationTitle?: string | null;
+  supportsImage?: boolean;
+  webSearch?: boolean;
+  onToggleWebSearch?: () => void;
 }
 
 export function ChatInput({
   onSend, disabled, isStreaming, onStop, agentName, conversationId, userId,
   editingContent, onEditSave, onEditCancel, onMemoryClick, conversationTitle,
+  supportsImage = false, webSearch = false, onToggleWebSearch,
 }: ChatInputProps) {
   const [content, setContent] = useState("");
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
@@ -54,8 +59,19 @@ export function ChatInput({
       setContent(editText);
       setAttachedImage(null);
       setTimeout(() => textareaRef.current?.focus(), 50);
+    } else {
+      // Clear textarea when exiting edit mode
+      setContent("");
+      setAttachedImage(null);
     }
   }, [isEditMode, editingContent]);
+
+  // Warn when model doesn't support images but image is attached
+  useEffect(() => {
+    if (!supportsImage && attachedImage) {
+      toast.error("Model ini tidak support image");
+    }
+  }, [supportsImage]);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -72,6 +88,7 @@ export function ChatInput({
   }, []);
 
   const handlePaste = (e: React.ClipboardEvent) => {
+    if (!supportsImage) return;
     const items = e.clipboardData?.items;
     if (!items) return;
     for (const item of items) {
@@ -86,6 +103,7 @@ export function ChatInput({
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    if (!supportsImage) return;
     const file = e.dataTransfer.files[0];
     if (file && file.type.startsWith("image/")) uploadFile(file);
   };
@@ -126,13 +144,17 @@ export function ChatInput({
         const imageMarkdown = editImages.map((url) => `![image](${url})`).join("\n");
         msg = msg ? `${msg}\n\n${imageMarkdown}` : imageMarkdown;
       }
-      if (msg) onEditSave?.(msg);
+      if (msg) {
+        onEditSave?.(msg);
+        setContent("");
+        setAttachedImage(null);
+      }
       return;
     }
 
-    if ((!content.trim() && !attachedImage) || disabled) return;
+    if ((!content.trim() && (!attachedImage || !supportsImage)) || disabled) return;
     let msg = content.trim();
-    if (attachedImage) {
+    if (attachedImage && supportsImage) {
       msg = msg ? `${msg}\n\n![image](${attachedImage})` : `![image](${attachedImage})`;
     }
     onSend(msg);
@@ -145,7 +167,9 @@ export function ChatInput({
     if (e.key === "Escape" && isEditMode) onEditCancel?.();
   };
 
-  const canSend = isEditMode ? !!content.trim() || editImages.length > 0 : (!!content.trim() || !!attachedImage) && !disabled;
+  const canSend = isEditMode
+    ? !!content.trim() || editImages.length > 0
+    : (!!content.trim() || (!!attachedImage && supportsImage)) && !disabled && !(attachedImage && !supportsImage);
 
   return (
     <div className="relative border-t border-border/40 bg-gradient-to-t from-background via-background to-background/0 pb-4 pt-6">
@@ -216,26 +240,57 @@ export function ChatInput({
           <div className="flex items-center justify-between px-3 py-2.5">
             <div className="flex items-center gap-1">
               {!isEditMode && onMemoryClick && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-xl text-muted-foreground hover:text-primary"
-                  onClick={onMemoryClick}
-                  title={conversationTitle ? `Remember for "${conversationTitle}"` : "Add global memory"}
-                >
-                  <Brain className="h-4 w-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-xl text-muted-foreground hover:text-primary"
+                      onClick={onMemoryClick}
+                    >
+                      <Brain className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    {conversationTitle ? `Remember for "${conversationTitle}"` : "Add global memory"}
+                  </TooltipContent>
+                </Tooltip>
               )}
-              {!isEditMode && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-xl text-muted-foreground hover:text-foreground"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={uploading || disabled}
-                >
-                  {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
-                </Button>
+              {!isEditMode && onToggleWebSearch && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn("h-8 w-8 rounded-xl", webSearch ? "text-primary bg-primary/10" : "text-muted-foreground hover:text-foreground")}
+                      onClick={onToggleWebSearch}
+                      disabled={disabled}
+                    >
+                      <Globe className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    {webSearch ? "Web search: ON" : "Web search: OFF"}
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              {!isEditMode && supportsImage && (
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-xl text-muted-foreground hover:text-foreground"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading || disabled}
+                    >
+                      {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    Upload image
+                  </TooltipContent>
+                </Tooltip>
               )}
             </div>
 
@@ -300,7 +355,7 @@ export function ChatInput({
 
         {/* Footer hint */}
         <p className="mt-2.5 text-center text-[10px] text-muted-foreground/60">
-          {isEditMode ? "Esc to cancel · Enter to save" : `${agentName ? `${agentName} · ` : ""}Powered by 9router · Shift+Enter for new line`}
+          {isEditMode ? "Esc to cancel · Enter to save" : attachedImage && !supportsImage ? "⚠️ Model ini tidak support image · hapus gambar atau ganti model" : <>{agentName && <>{agentName} · </>}Powered by <a href="https://github.com/yudhaharsanto" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">yudhaharsanto</a> · Shift+Enter for new line</>}
         </p>
       </div>
     </div>

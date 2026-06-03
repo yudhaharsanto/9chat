@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Sparkles, Zap, Shield, BookOpen, ArrowRight, MessageSquare, Bot, ChevronDown } from "lucide-react";
 import type { Skill, KnowledgeSource, Message } from "@/lib/types";
 import { MessageBranchSelector } from "@/components/chat/message-branch-selector";
+import { toast } from "sonner";
 
 export function ChatArea() {
   const {
@@ -23,10 +24,79 @@ export function ChatArea() {
     createConversation, selectConversation, addMessage, deleteMessage, setMessages, renameConversation, updateConversationModel,
     activeProject, activeAgent, knowledgeSources, skills, memories, addMemory,
   } = useChatContext();
-  const { modelAliases } = useSettings();
+  const { modelAliases, modelImageSupport, settings } = useSettings();
   const { currentUser } = useAuth();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [selectedModel, setSelectedModel] = useState(currentUser?.default_model || activeAgent?.model || "gpt-4o");
+  const [selectedModel, setSelectedModel] = useState(currentUser?.default_model || activeAgent?.model || "");
+  const [webSearch, setWebSearch] = useState(false);
+  const activeConversationIdRef = useRef<string | undefined>(undefined);
+
+  // Build model name system prompt — respects user's AI name memory
+  // Parse memory content — handles both JSON {text, source, updatedAt} and legacy plain text
+  const parseMemoryText = (raw: string): string => {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.text === "string") return parsed.text;
+    } catch { /* legacy plain text */ }
+    return raw;
+  };
+
+  const buildModelPrompt = (modelId: string, mems: typeof memories): string => {
+    const displayName = getDisplayName(modelId);
+    const aiNameMemory = mems.find((m) => {
+      const text = parseMemoryText(m.content);
+      return /(?:namamu|kamu.*(?:bernama|dipanggil|nama)|your name.*is|call you)\s+[A-Z]/i.test(text);
+    });
+    if (aiNameMemory) {
+      const text = parseMemoryText(aiNameMemory.content);
+      const nameMatch = text.match(/(?:namamu|dipanggil|bernama|nama.*(?:adalah|ialah)|your name.*is|call you|berikan.*nama)\s+([A-Z][a-z]{1,30})/i);
+      const aiName = nameMatch?.[1];
+      if (aiName) {
+        return `Your name is "${aiName}". You are called "${aiName}" by this user. Always refer to yourself as "${aiName}". You are running on the "${displayName}" model, but never mention the model name unless explicitly asked. Do not mention internal model IDs or technical identifiers.`;
+      }
+    }
+    return `Your model name is "${displayName}". When asked what model or AI you are, respond with this name. Do not mention internal model IDs or technical identifiers.`;
+  };
+
+  // Auto-memory extraction (fire-and-forget)
+  const extractMemories = (userMessage: string, aiResponse: string, convId: string) => {
+    if (!currentUser?.id || !selectedModel || !settings.routerUrl) return;
+    fetch("/api/auto-memory", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-router-url": settings.routerUrl, "x-router-key": settings.routerApiKey },
+      body: JSON.stringify({
+        userMessage,
+        aiResponse,
+        userId: currentUser.id,
+        conversationId: convId,
+        model: selectedModel,
+      }),
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.saved > 0) toast.success(`✨ ${d.saved} memory saved`, { duration: 2000 });
+      })
+      .catch(() => {});
+  };
+
+  // Web search helper
+  const performWebSearch = async (query: string): Promise<string> => {
+    try {
+      const res = await fetch("/api/web-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query }),
+      });
+      if (!res.ok) return "";
+      const { results } = await res.json();
+      if (!results?.length) return "";
+      return results.map((r: { title: string; url: string; snippet: string }, i: number) =>
+        `${i + 1}. ${r.title}\n   ${r.url}\n   ${r.snippet}`
+      ).join("\n\n");
+    } catch {
+      return "";
+    }
+  };
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
@@ -36,12 +106,16 @@ export function ChatArea() {
   const [editBranches, setEditBranches] = useState<Record<string, number>>({});
   const [showMemoryDialog, setShowMemoryDialog] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const streamingMsgIdRef = useRef<string | null>(null);
 
   // Update model when conversation, agent, or user changes
   useEffect(() => {
+    activeConversationIdRef.current = activeConversation?.id;
     if (activeConversation?.model) setSelectedModel(activeConversation.model);
     else if (activeAgent?.model) setSelectedModel(activeAgent.model);
     else if (currentUser?.default_model) setSelectedModel(currentUser.default_model);
+    else setSelectedModel("");
   }, [activeConversation?.id, activeConversation?.model, activeAgent, currentUser?.default_model]);
 
   useEffect(() => {
@@ -67,11 +141,107 @@ export function ChatArea() {
     return () => images.forEach((img) => img.removeEventListener("load", scrollBottom));
   }, [messages, streamingContent]);
 
+  // ── SSE stream helper ──
+  const connectToStream = (messageId: string, initialContent: string) => {
+    // Close existing connection
+    if (eventSourceRef.current) { eventSourceRef.current.close(); eventSourceRef.current = null; }
+    streamingMsgIdRef.current = messageId;
+
+    // Capture the conversation ID at connect time (avoid stale closure)
+    const streamConvId = activeConversationIdRef.current;
+
+    setIsStreaming(true);
+    setStreamingContent(initialContent);
+    let full = initialContent;
+
+    const es = new EventSource(`/api/messages/stream?id=${messageId}`);
+    eventSourceRef.current = es;
+
+    es.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.content) {
+          full += data.content;
+          setStreamingContent(full);
+        }
+        if (data.done) {
+          es.close();
+          eventSourceRef.current = null;
+          streamingMsgIdRef.current = null;
+          // Only update if still in the same conversation
+          if (activeConversationIdRef.current === streamConvId) {
+            setMessages((prev) => prev.map((m) =>
+              m.id === messageId ? { ...m, content: full, status: data.status as Message["status"] } : m
+            ));
+            setIsStreaming(false);
+            setStreamingContent("");
+            if (data.status === "done") extractMemories("", full, streamConvId || "");
+          }
+          // Always persist to DB
+          fetch("/api/messages/update", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: messageId, content: full, status: data.status }),
+          }).catch(() => {});
+        }
+      } catch {}
+    };
+
+    es.onerror = () => {
+      es.close();
+      eventSourceRef.current = null;
+      // Only retry if still in the same conversation
+      if (activeConversationIdRef.current !== streamConvId) return;
+      setTimeout(() => {
+        if (streamingMsgIdRef.current === messageId) {
+          connectToStream(messageId, full);
+        }
+      }, 2000);
+    };
+  };
+
+  // Close SSE stream when conversation changes
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+      streamingMsgIdRef.current = null;
+      setIsStreaming(false);
+      setStreamingContent("");
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeConversation?.id]);
+
+  // Resume in-progress generation on conversation load
+  useEffect(() => {
+    if (!messages.length || !activeConversation?.id) return;
+    const lastMsg = messages[messages.length - 1];
+    if (
+      lastMsg.role === "assistant" &&
+      lastMsg.status === "generating" &&
+      lastMsg.conversation_id === activeConversation.id &&
+      streamingMsgIdRef.current !== lastMsg.id
+    ) {
+      connectToStream(lastMsg.id, lastMsg.content);
+    }
+  }, [messages, activeConversation?.id]);
+
+  // Cleanup EventSource on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) { eventSourceRef.current.close(); eventSourceRef.current = null; }
+    };
+  }, []);
+
   const getDisplayName = (modelId: string): string => {
     if (modelAliases[modelId]) return modelAliases[modelId];
     const parts = modelId.split("/");
     return parts[parts.length - 1] || modelId;
   };
+
+  const supportsImage = modelImageSupport[selectedModel] ?? false;
 
   // Edit message: populate edit state
   const handleEditMessage = (msgId: string, content: string) => {
@@ -126,15 +296,10 @@ export function ChatArea() {
     }
 
     // Stream new response
-    setIsStreaming(true);
-    setStreamingContent("");
-    abortRef.current = new AbortController();
-
     const systemParts: string[] = [];
     if (activeAgent?.system_prompt) systemParts.push(activeAgent.system_prompt);
     if (selectedSkill?.prompt_template) systemParts.push(selectedSkill.prompt_template);
-    const modelDisplayName = getDisplayName(selectedModel);
-    systemParts.push(`Your model name is "${modelDisplayName}". When asked what model or AI you are, respond with this name. Do not mention internal model IDs or technical identifiers.`);
+    systemParts.push(buildModelPrompt(selectedModel, memories));
 
     const knowledgeToInject: KnowledgeSource[] = [...selectedKnowledge];
     if (knowledgeSources.length > 0) {
@@ -156,8 +321,22 @@ export function ChatArea() {
     if (memories.length > 0) {
       systemParts.push("\n--- User Memory ---");
       systemParts.push("The following are facts about this user. Use them to personalize your responses:");
-      memories.forEach((m) => systemParts.push(`- ${m.content}`));
+      memories.forEach((m) => systemParts.push(`- ${parseMemoryText(m.content)}`));
       systemParts.push("--- End User Memory ---\n");
+    }
+
+    // Web search grounding
+    if (webSearch) {
+      const cleanQuery = content.replace(/!\[[^\]]*\]\([^)]+\)/g, "").trim();
+      if (cleanQuery) {
+        const searchResults = await performWebSearch(cleanQuery);
+        if (searchResults) {
+          systemParts.push("\n--- Web Search Results ---");
+          systemParts.push("The following are web search results for the user's query. Use them to provide accurate, up-to-date information. Cite sources when relevant.");
+          systemParts.push(searchResults);
+          systemParts.push("--- End Web Search Results ---\n");
+        }
+      }
     }
 
     const convMessages = messages.filter((m) => m.id !== originalUserMsg.id && m.id !== assistantReply?.id);
@@ -170,47 +349,46 @@ export function ChatArea() {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: selectedModel, messages: apiMessages }),
-        signal: abortRef.current.signal,
+        headers: { "Content-Type": "application/json", "x-router-url": settings.routerUrl, "x-router-key": settings.routerApiKey },
+        body: JSON.stringify({ model: selectedModel, messages: apiMessages, userId: currentUser?.id, conversationId: convId }),
       });
-      if (!res.ok) throw new Error("Failed");
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-      let full = "";
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          for (const line of chunk.split("\n")) {
-            if (line.startsWith("data: ")) {
-              const data = line.slice(6);
-              if (data === "[DONE]") continue;
-              try {
-                const delta = JSON.parse(data).choices?.[0]?.delta?.content;
-                if (delta) { full += delta; setStreamingContent(full); }
-              } catch {}
-            }
+      if (!res.ok) {
+        if (res.status === 429) {
+          const errData = await res.json();
+          if (errData.code === "TOKEN_LIMIT_EXCEEDED") {
+            toast.error(`Token limit reached (${errData.used.toLocaleString()} / ${errData.limit.toLocaleString()}). Contact admin.`);
+            setIsStreaming(false);
+            setStreamingContent("");
+            return;
           }
         }
+        throw new Error("Failed");
       }
-      if (full) await addMessage({
+      const { messageId } = await res.json();
+      if (!messageId) throw new Error("No message ID returned");
+
+      if (activeConversationIdRef.current !== convId) return;
+
+      setIsStreaming(true);
+      setStreamingContent("");
+
+      const placeholder: Message = {
+        id: messageId,
         conversation_id: convId,
-        role: "assistant" as const,
-        content: full,
+        role: "assistant",
+        content: "",
         tokens_used: null,
+        created_at: new Date().toISOString(),
         edit_group_id: editGroupId,
         branch_index: newBranchIndex,
-      });
+        status: "generating",
+      };
+      setMessages((prev) => [...prev, placeholder]);
+      connectToStream(messageId, "");
     } catch (err) {
-      if (err instanceof Error && err.name !== "AbortError") {
-        await addMessage({ conversation_id: convId, role: "assistant" as const, content: "Sorry, something went wrong. Please try again.", tokens_used: null });
+      if (err instanceof Error) {
+        toast.error(err.message);
       }
-    } finally {
-      setIsStreaming(false);
-      setStreamingContent("");
-      abortRef.current = null;
     }
   };
 
@@ -218,7 +396,118 @@ export function ChatArea() {
     setEditBranches((prev) => ({ ...prev, [editGroupId]: branch }));
   };
 
+  // ── Regenerate last assistant response ──
+  const handleRegenerate = async () => {
+    if (!activeConversation?.id || isStreaming) return;
+    const convId = activeConversation.id;
+
+    // Find last assistant message
+    const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+    const lastUser = [...messages].reverse().find((m) => m.role === "user");
+    if (!lastAssistant || !lastUser) return;
+
+    // Delete last assistant message
+    await deleteMessage(lastAssistant.id);
+
+    // Re-send last user message content
+    const systemParts: string[] = [];
+    if (activeAgent?.system_prompt) systemParts.push(activeAgent.system_prompt);
+    if (selectedSkill?.prompt_template) systemParts.push(selectedSkill.prompt_template);
+    systemParts.push(buildModelPrompt(selectedModel, memories));
+
+    const knowledgeToInject: KnowledgeSource[] = [...selectedKnowledge];
+    if (knowledgeSources.length > 0) {
+      const relevant = knowledgeSources.filter((k) =>
+        !selectedKnowledge.some((sk) => sk.id === k.id) && (
+          lastUser.content.toLowerCase().includes(k.name.toLowerCase()) ||
+          k.content.toLowerCase().slice(0, 200).split(/\s+/).some((w) => lastUser.content.toLowerCase().includes(w.toLowerCase()))
+        )
+      ).slice(0, 3);
+      knowledgeToInject.push(...relevant);
+    }
+    if (knowledgeToInject.length > 0) {
+      systemParts.push("\n--- Relevant Knowledge ---");
+      knowledgeToInject.forEach((k) => systemParts.push(`[${k.name}]\n${k.content}`));
+      systemParts.push("--- End Knowledge ---\n");
+    }
+    if (memories.length > 0) {
+      systemParts.push("\n--- User Memory ---");
+      systemParts.push("The following are facts about this user. Use them to personalize your responses:");
+      memories.forEach((m) => systemParts.push(`- ${parseMemoryText(m.content)}`));
+      systemParts.push("--- End User Memory ---\n");
+    }
+
+    // Web search grounding
+    if (webSearch) {
+      const cleanQuery = lastUser.content.replace(/!\[[^\]]*\]\([^)]+\)/g, "").trim();
+      if (cleanQuery) {
+        const searchResults = await performWebSearch(cleanQuery);
+        if (searchResults) {
+          systemParts.push("\n--- Web Search Results ---");
+          systemParts.push("The following are web search results for the user's query. Use them to provide accurate, up-to-date information. Cite sources when relevant.");
+          systemParts.push(searchResults);
+          systemParts.push("--- End Web Search Results ---\n");
+        }
+      }
+    }
+
+    const contextMessages = messages.filter((m) => m.id !== lastAssistant.id);
+    const apiMessages = [
+      ...(systemParts.length > 0 ? [{ role: "system" as const, content: systemParts.join("\n\n") }] : []),
+      ...contextMessages.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
+    ];
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-router-url": settings.routerUrl, "x-router-key": settings.routerApiKey },
+        body: JSON.stringify({ model: selectedModel, messages: apiMessages, userId: currentUser?.id, conversationId: convId }),
+      });
+      if (!res.ok) {
+        if (res.status === 429) {
+          const errData = await res.json();
+          if (errData.code === "TOKEN_LIMIT_EXCEEDED") {
+            toast.error(`Token limit reached (${errData.used.toLocaleString()} / ${errData.limit.toLocaleString()}). Contact admin.`);
+            setIsStreaming(false);
+            setStreamingContent("");
+            return;
+          }
+        }
+        throw new Error("Failed");
+      }
+      const { messageId } = await res.json();
+      if (!messageId) throw new Error("No message ID returned");
+
+      if (activeConversationIdRef.current !== convId) return;
+
+      setIsStreaming(true);
+      setStreamingContent("");
+
+      const placeholder: Message = {
+        id: messageId,
+        conversation_id: convId,
+        role: "assistant",
+        content: "",
+        tokens_used: null,
+        created_at: new Date().toISOString(),
+        edit_group_id: lastUser.edit_group_id || lastUser.id,
+        branch_index: lastUser.branch_index ?? 0,
+        status: "generating",
+      };
+      setMessages((prev) => [...prev, placeholder]);
+      connectToStream(messageId, "");
+    } catch (err) {
+      if (err instanceof Error) {
+        toast.error(err.message);
+      }
+    }
+  };
+
   const handleSend = async (content: string) => {
+    if (!selectedModel) {
+      toast.error("Pilih model dulu sebelum chat");
+      return;
+    }
     let convId = activeConversation?.id;
     const isNewConv = !convId;
     if (!convId) {
@@ -246,17 +535,21 @@ export function ChatArea() {
       return prev;
     });
 
-    setIsStreaming(true);
-    setStreamingContent("");
-    abortRef.current = new AbortController();
+    // For new conversations, deduplicate: addMessage appends to local state
+    // but the user message is already there from selectConversation's DB load
+    // Just reload messages from DB to get clean state
+    if (isNewConv) {
+      const supabase = (await import("@/lib/supabase/client")).createClient();
+      const { data: freshMsgs } = await supabase.from("messages").select("*").eq("conversation_id", convId).order("created_at", { ascending: true });
+      if (freshMsgs) setMessages(freshMsgs);
+    }
 
     const systemParts: string[] = [];
     if (activeAgent?.system_prompt) systemParts.push(activeAgent.system_prompt);
     if (selectedSkill?.prompt_template) systemParts.push(selectedSkill.prompt_template);
 
     // Inject model identity so AI uses alias when asked
-    const modelDisplayName = getDisplayName(selectedModel);
-    systemParts.push(`Your model name is "${modelDisplayName}". When asked what model or AI you are, respond with this name. Do not mention internal model IDs or technical identifiers.`);
+    systemParts.push(buildModelPrompt(selectedModel, memories));
 
     // Knowledge: manually selected (always injected) + auto-matched (relevance)
     const knowledgeToInject: KnowledgeSource[] = [...selectedKnowledge];
@@ -279,7 +572,7 @@ export function ChatArea() {
     if (memories.length > 0) {
       systemParts.push("\n--- User Memory ---");
       systemParts.push("The following are facts about this user. Use them to personalize your responses:");
-      memories.forEach((m) => systemParts.push(`- ${m.content}`));
+      memories.forEach((m) => systemParts.push(`- ${parseMemoryText(m.content)}`));
       systemParts.push("--- End User Memory ---\n");
     }
 
@@ -292,43 +585,51 @@ export function ChatArea() {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ model: selectedModel, messages: apiMessages }),
-        signal: abortRef.current.signal,
+        headers: { "Content-Type": "application/json", "x-router-url": settings.routerUrl, "x-router-key": settings.routerApiKey },
+        body: JSON.stringify({ model: selectedModel, messages: apiMessages, userId: currentUser?.id, conversationId: convId }),
       });
 
-      if (!res.ok) throw new Error("Failed");
-      const reader = res.body?.getReader();
-      const decoder = new TextDecoder();
-      let full = "";
-
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          for (const line of chunk.split("\n")) {
-            if (line.startsWith("data: ")) {
-              const data = line.slice(6);
-              if (data === "[DONE]") continue;
-              try {
-                const delta = JSON.parse(data).choices?.[0]?.delta?.content;
-                if (delta) { full += delta; setStreamingContent(full); }
-              } catch {}
-            }
+      if (!res.ok) {
+        if (res.status === 429) {
+          const errData = await res.json();
+          if (errData.code === "TOKEN_LIMIT_EXCEEDED") {
+            toast.error(`Token limit reached (${errData.used.toLocaleString()} / ${errData.limit.toLocaleString()}). Contact admin.`);
+            setIsStreaming(false);
+            setStreamingContent("");
+            return;
           }
         }
+        throw new Error("Failed");
       }
 
-      if (full) await addMessage({ conversation_id: convId, role: "assistant", content: full, tokens_used: null });
-    } catch (err) {
-      if (err instanceof Error && err.name !== "AbortError") {
-        await addMessage({ conversation_id: convId, role: "assistant", content: "Sorry, something went wrong. Please try again.", tokens_used: null });
-      }
-    } finally {
-      setIsStreaming(false);
+      const { messageId } = await res.json();
+      if (!messageId) throw new Error("No message ID returned");
+
+      // Guard: user switched rooms while waiting for POST
+      if (activeConversationIdRef.current !== convId) return;
+
+      // Set streaming state only after guard passes
+      setIsStreaming(true);
       setStreamingContent("");
-      abortRef.current = null;
+
+      // Add placeholder message to local state
+      const placeholder: Message = {
+        id: messageId,
+        conversation_id: convId,
+        role: "assistant",
+        content: "",
+        tokens_used: null,
+        created_at: new Date().toISOString(),
+        status: "generating",
+      };
+      setMessages((prev) => [...prev, placeholder]);
+
+      // Connect to SSE stream for real-time content
+      connectToStream(messageId, "");
+    } catch (err) {
+      if (err instanceof Error) {
+        toast.error(err.message);
+      }
     }
   };
 
@@ -365,6 +666,11 @@ export function ChatArea() {
                 <div className="mt-3 flex items-center justify-center gap-2">
                   <Badge variant="secondary" className="rounded-full text-[10px] px-2.5 py-0.5">{getDisplayName(activeAgent.model)}</Badge>
                   <Badge variant="outline" className="rounded-full text-[10px] px-2.5 py-0.5">temp: {activeAgent.temperature}</Badge>
+                </div>
+              )}
+              {!activeAgent && !currentUser?.default_model && (
+                <div className="mt-3">
+                  <p className="text-xs text-amber-500 font-medium">Pilih model dulu untuk mulai chat</p>
                 </div>
               )}
             </div>
@@ -408,7 +714,7 @@ export function ChatArea() {
             </div>
           </div>
         </div>
-        <ChatInput onSend={handleSend} disabled={false} isStreaming={false} agentName={activeAgent?.name} conversationId={undefined} userId={currentUser?.id} />
+        <ChatInput onSend={handleSend} disabled={!selectedModel} isStreaming={false} agentName={activeAgent?.name} conversationId={undefined} userId={currentUser?.id} supportsImage={supportsImage} webSearch={webSearch} onToggleWebSearch={() => setWebSearch((v) => !v)} />
       </div>
     );
   }
@@ -443,12 +749,33 @@ export function ChatArea() {
 
       {/* Messages */}
       <ScrollArea className="flex-1 min-h-0" ref={scrollRef}>
-        <div className="mx-auto max-w-3xl space-y-1 px-4 py-6">
+        <div className="w-full space-y-1 px-4 py-6">
           {(() => {
             // Build display list with branch awareness
             const display: React.ReactNode[] = [];
             let lastUserEditGroup: string | null = null;
             let lastUserGroupTotal = 0;
+
+            // Pre-compute: find the last visible assistant message ID (accounting for branch filtering)
+            let lastVisibleAssistantId: string | null = null;
+            {
+              let _lueg: string | null = null;
+              let _lugt = 0;
+              for (const msg of messages) {
+                if (msg.role === "user") {
+                  const egId = msg.edit_group_id || msg.id;
+                  _lueg = egId;
+                  _lugt = messages.filter((m) => m.role === "user" && (m.edit_group_id === egId || m.id === egId)).length;
+                  const cb = editBranches[egId] ?? 0;
+                  if ((msg.branch_index ?? 0) !== cb) continue;
+                } else if (msg.role === "assistant") {
+                  const bi = msg.branch_index ?? 0;
+                  const cb = _lueg ? (editBranches[_lueg] ?? 0) : 0;
+                  if (_lueg && _lugt > 1 && bi !== cb) continue;
+                  lastVisibleAssistantId = msg.id;
+                }
+              }
+            }
 
             for (let i = 0; i < messages.length; i++) {
               const msg = messages[i];
@@ -475,6 +802,7 @@ export function ChatArea() {
                       role="user"
                       content={msg.content}
                       onEdit={() => handleEditMessage(msg.id, msg.content)}
+                      createdAt={msg.created_at}
                     />
                     <MessageBranchSelector
                       currentBranch={currentBranch}
@@ -484,13 +812,16 @@ export function ChatArea() {
                   </div>
                 );
               } else if (msg.role === "assistant") {
+                // Skip generating messages — streaming bubble handles them
+                if (msg.status === "generating") continue;
                 const branchIndex = msg.branch_index ?? 0;
                 const currentBranch = lastUserEditGroup ? (editBranches[lastUserEditGroup] ?? 0) : 0;
 
                 // Skip non-current branch assistant messages
                 if (lastUserEditGroup && lastUserGroupTotal > 1 && branchIndex !== currentBranch) continue;
+                const isLastAssistant = !isStreaming && msg.id === lastVisibleAssistantId;
                 display.push(
-                  <ChatMessage key={msg.id} role="assistant" content={msg.content} />
+                  <ChatMessage key={msg.id} role="assistant" content={msg.content} onRetry={isLastAssistant ? handleRegenerate : undefined} createdAt={msg.created_at} />
                 );
               }
             }
@@ -519,7 +850,7 @@ export function ChatArea() {
       {/* Input */}
       <ChatInput
         onSend={handleSend}
-        disabled={false}
+        disabled={!selectedModel}
         isStreaming={isStreaming}
         onStop={() => abortRef.current?.abort()}
         agentName={activeAgent?.name}
@@ -533,6 +864,9 @@ export function ChatArea() {
         onEditCancel={() => { setEditingMessageId(null); setEditContent(""); }}
         onMemoryClick={() => setShowMemoryDialog(true)}
         conversationTitle={activeConversation?.title || null}
+        supportsImage={supportsImage}
+        webSearch={webSearch}
+        onToggleWebSearch={() => setWebSearch((v) => !v)}
       />
 
       {/* Memory Dialog */}

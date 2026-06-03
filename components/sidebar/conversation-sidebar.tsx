@@ -10,7 +10,7 @@ import { useSettings } from "@/components/providers/settings-provider";
 import { useAuth } from "@/components/providers/auth-provider";
 import {
   Plus, MessageSquare, Trash2, Pencil, Check, X, Search, Sparkles, Settings, Bot, LogOut, Save,
-  Brain, ChevronRight, User as UserIcon, FolderOpen, Zap, Globe,
+  Brain, ChevronRight, User as UserIcon, FolderOpen, Zap, Globe, Pin,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -29,6 +29,7 @@ export function ConversationSidebar({ collapsed }: ConversationSidebarProps) {
     conversations, activeConversation, activeProject, agents, activeAgent,
     selectConversation, createConversation, deleteConversation,
     renameConversation, setActiveProject, setActiveAgent,
+    togglePinConversation,
     memories, addMemory, updateMemory, deleteMemory,
   } = useChatContext();
   const { currentUser, logout } = useAuth();
@@ -333,9 +334,11 @@ export function ConversationSidebar({ collapsed }: ConversationSidebarProps) {
               onClick={() => selectConversation(conv.id)}
               className={cn(
                 "group flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-2 text-sm transition-colors",
-                activeConversation?.id === conv.id ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/50"
+                activeConversation?.id === conv.id ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent/50",
+                conv.pinned && "bg-primary/5"
               )}
             >
+              {conv.pinned && <Pin className="h-3 w-3 flex-shrink-0 text-primary fill-primary" />}
               <MessageSquare className="h-3.5 w-3.5 flex-shrink-0 opacity-50" />
               {editingId === conv.id ? (
                 <div className="flex flex-1 items-center gap-1">
@@ -349,6 +352,7 @@ export function ConversationSidebar({ collapsed }: ConversationSidebarProps) {
                 <>
                   <span className="flex-1 truncate text-xs">{conv.title}</span>
                   <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button variant="ghost" size="icon" className={cn("h-5 w-5", conv.pinned && "text-primary")} onClick={(e) => { e.stopPropagation(); togglePinConversation(conv.id, !conv.pinned); }} title={conv.pinned ? "Unpin" : "Pin"}><Pin className={cn("h-3 w-3", conv.pinned && "fill-primary")} /></Button>
                     <Button variant="ghost" size="icon" className="h-5 w-5" onClick={(e) => { e.stopPropagation(); setEditingId(conv.id); setEditTitle(conv.title); }}><Pencil className="h-3 w-3" /></Button>
                     <Button variant="ghost" size="icon" className="h-5 w-5 text-destructive" onClick={(e) => { e.stopPropagation(); deleteConversation(conv.id); }}><Trash2 className="h-3 w-3" /></Button>
                   </div>
@@ -367,7 +371,7 @@ export function ConversationSidebar({ collapsed }: ConversationSidebarProps) {
 
       {/* Footer */}
       <div className="border-t p-3 flex items-center justify-between">
-        <p className="text-[10px] text-muted-foreground">Powered by 9router</p>
+        <a href="https://github.com/yudhaharsanto" target="_blank" rel="noopener noreferrer" className="text-[10px] text-muted-foreground hover:text-foreground transition-colors">Powered by yudhaharsanto</a>
         <span className="text-[10px] text-muted-foreground">{currentUser?.avatar} {currentUser?.display_name}</span>
       </div>
 

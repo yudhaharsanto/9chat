@@ -9,6 +9,9 @@ export interface User {
   is_active: boolean;
   default_model: string | null;
   allowed_models: string[] | null;
+  token_input_used: number;
+  token_output_used: number;
+  token_limit: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -67,6 +70,7 @@ export interface Conversation {
   title: string;
   model: string;
   system_prompt: string | null;
+  pinned: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -80,6 +84,7 @@ export interface Message {
   created_at: string;
   edit_group_id?: string | null;
   branch_index?: number | null;
+  status?: "generating" | "done" | "failed";
 }
 
 // ── Junction ──
