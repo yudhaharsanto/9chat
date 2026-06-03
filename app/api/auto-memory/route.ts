@@ -185,20 +185,26 @@ export async function POST(req: NextRequest) {
   }
 
   if (!userId || !userMessage || !aiResponse) {
+    console.error("[auto-memory] Missing fields:", { userId: !!userId, userMessage: userMessage?.slice(0, 50), aiResponse: aiResponse?.slice(0, 50) });
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
   const routerUrl = req.headers.get("x-router-url") || process.env.NINE_ROUTER_URL || "http://localhost:18787";
   const routerKey = req.headers.get("x-router-key") || process.env.NINE_ROUTER_API_KEY || "";
 
+  console.log("[auto-memory] request:", { userId, userMessage: userMessage?.slice(0, 100), aiResponse: aiResponse?.slice(0, 100), model, routerUrl });
+
   // Extract memories
   let extracted = await extractMemoriesAI(userMessage, aiResponse, model, routerUrl, routerKey);
   let method = "ai";
+  console.log("[auto-memory] AI extracted:", extracted.length, extracted);
   if (extracted.length === 0) {
     extracted = extractMemoriesBasic(userMessage);
     method = "rules";
+    console.log("[auto-memory] Rules extracted:", extracted.length, extracted);
   }
   if (extracted.length === 0) {
+    console.log("[auto-memory] no memories extracted from:", userMessage?.slice(0, 200));
     return NextResponse.json({ saved: 0, method: "none" });
   }
 
