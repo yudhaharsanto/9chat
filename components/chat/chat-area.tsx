@@ -142,7 +142,7 @@ export function ChatArea() {
   }, [messages, streamingContent]);
 
   // ── SSE stream helper ──
-  const connectToStream = (messageId: string, initialContent: string) => {
+  const connectToStream = (messageId: string, initialContent: string, userMsg?: string) => {
     // Close existing connection
     if (eventSourceRef.current) { eventSourceRef.current.close(); eventSourceRef.current = null; }
     streamingMsgIdRef.current = messageId;
@@ -175,7 +175,7 @@ export function ChatArea() {
             ));
             setIsStreaming(false);
             setStreamingContent("");
-            if (data.status === "done") extractMemories("", full, streamConvId || "");
+            if (data.status === "done") extractMemories(userMsg || "", full, streamConvId || "");
           }
           // Always persist to DB
           fetch("/api/messages/update", {
@@ -194,7 +194,7 @@ export function ChatArea() {
       if (activeConversationIdRef.current !== streamConvId) return;
       setTimeout(() => {
         if (streamingMsgIdRef.current === messageId) {
-          connectToStream(messageId, full);
+          connectToStream(messageId, full, userMsg);
         }
       }, 2000);
     };
@@ -224,7 +224,9 @@ export function ChatArea() {
       lastMsg.conversation_id === activeConversation.id &&
       streamingMsgIdRef.current !== lastMsg.id
     ) {
-      connectToStream(lastMsg.id, lastMsg.content);
+      // Find the user message that triggered this generation
+      const lastUser = [...messages].reverse().find((m) => m.role === "user");
+      connectToStream(lastMsg.id, lastMsg.content, lastUser?.content);
     }
   }, [messages, activeConversation?.id]);
 
@@ -384,7 +386,7 @@ export function ChatArea() {
         status: "generating",
       };
       setMessages((prev) => [...prev, placeholder]);
-      connectToStream(messageId, "");
+      connectToStream(messageId, "", content.trim());
     } catch (err) {
       if (err instanceof Error) {
         toast.error(err.message);
@@ -495,7 +497,7 @@ export function ChatArea() {
         status: "generating",
       };
       setMessages((prev) => [...prev, placeholder]);
-      connectToStream(messageId, "");
+      connectToStream(messageId, "", lastUser.content);
     } catch (err) {
       if (err instanceof Error) {
         toast.error(err.message);
@@ -625,7 +627,7 @@ export function ChatArea() {
       setMessages((prev) => [...prev, placeholder]);
 
       // Connect to SSE stream for real-time content
-      connectToStream(messageId, "");
+      connectToStream(messageId, "", content);
     } catch (err) {
       if (err instanceof Error) {
         toast.error(err.message);
