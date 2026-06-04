@@ -103,6 +103,9 @@ export function ChatArea() {
   };
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamingContent, setStreamingContent] = useState("");
+  const [streamingThinking, setStreamingThinking] = useState("");
+  const [isThinkingPhase, setIsThinkingPhase] = useState(false);
+  const isThinkingPhaseRef = useRef(false);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [selectedKnowledge, setSelectedKnowledge] = useState<KnowledgeSource[]>([]);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -156,7 +159,11 @@ export function ChatArea() {
 
     setIsStreaming(true);
     setStreamingContent(initialContent);
+    setStreamingThinking("");
+    setIsThinkingPhase(false);
+    isThinkingPhaseRef.current = false;
     let full = initialContent;
+    let fullThinking = "";
 
     const es = new EventSource(`/api/messages/stream?id=${messageId}`);
     eventSourceRef.current = es;
@@ -164,10 +171,27 @@ export function ChatArea() {
     es.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
+        
+        // Handle thinking content
+        if (data.thinking) {
+          fullThinking += data.thinking;
+          setStreamingThinking(fullThinking);
+          if (!isThinkingPhaseRef.current) {
+            isThinkingPhaseRef.current = true;
+            setIsThinkingPhase(true);
+          }
+        }
+        
+        // Handle regular content
         if (data.content) {
           full += data.content;
           setStreamingContent(full);
+          if (isThinkingPhaseRef.current) {
+            isThinkingPhaseRef.current = false;
+            setIsThinkingPhase(false);
+          }
         }
+        
         if (data.done) {
           es.close();
           eventSourceRef.current = null;
@@ -175,17 +199,20 @@ export function ChatArea() {
           // Only update if still in the same conversation
           if (activeConversationIdRef.current === streamConvId) {
             setMessages((prev) => prev.map((m) =>
-              m.id === messageId ? { ...m, content: full, status: data.status as Message["status"] } : m
+              m.id === messageId ? { ...m, content: full, thinking: fullThinking || null, status: data.status as Message["status"] } : m
             ));
             setIsStreaming(false);
             setStreamingContent("");
+            setStreamingThinking("");
+            setIsThinkingPhase(false);
+            isThinkingPhaseRef.current = false;
             if (data.status === "done") extractMemories(userMsg || "", full, streamConvId || "");
           }
           // Always persist to DB
           fetch("/api/messages/update", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: messageId, content: full, status: data.status }),
+            body: JSON.stringify({ id: messageId, content: full, thinking: fullThinking || null, status: data.status }),
           }).catch(() => {});
         }
       } catch {}
@@ -214,6 +241,9 @@ export function ChatArea() {
       streamingMsgIdRef.current = null;
       setIsStreaming(false);
       setStreamingContent("");
+      setStreamingThinking("");
+      setIsThinkingPhase(false);
+      isThinkingPhaseRef.current = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeConversation?.id]);
@@ -840,27 +870,18 @@ export function ChatArea() {
                 if (lastUserEditGroup && lastUserGroupTotal > 1 && branchIndex !== currentBranch) continue;
                 const isLastAssistant = !isStreaming && msg.id === lastVisibleAssistantId;
                 display.push(
-                  <ChatMessage key={msg.id} role="assistant" content={msg.content} onRetry={isLastAssistant ? handleRegenerate : undefined} createdAt={msg.created_at} status={msg.status} />
+                  <ChatMessage key={msg.id} role="assistant" content={msg.content} thinking={msg.thinking || undefined} onRetry={isLastAssistant ? handleRegenerate : undefined} createdAt={msg.created_at} status={msg.status} responseTimeMs={msg.response_time_ms} tokensUsed={msg.tokens_used} />
                 );
               }
             }
             return display;
           })()}
-          {isStreaming && streamingContent && (
+          {isStreaming && (streamingContent || streamingThinking) && (
             <div>
-              <ChatMessage role="assistant" content={streamingContent} isStreaming />
-              <div className="mt-1 ml-9">
-                <button
-                  onClick={handleCancelGeneration}
-                  className="flex items-center gap-1.5 rounded-full bg-muted/80 px-3 py-1 text-xs text-muted-foreground hover:bg-muted transition-colors"
-                >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2" /></svg>
-                  Stop generating
-                </button>
-              </div>
+              <ChatMessage role="assistant" content={streamingContent || undefined} thinking={streamingThinking || undefined} isStreaming isThinking={isThinkingPhase} />
             </div>
           )}
-          {isStreaming && !streamingContent && (
+          {isStreaming && !streamingContent && !streamingThinking && (
             <div className="flex gap-4">
               <div className="mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/5 ring-1 ring-primary/10">
                 <Sparkles className="h-3.5 w-3.5 text-primary animate-pulse" />
@@ -871,13 +892,6 @@ export function ChatArea() {
                   <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/60 [animation-delay:150ms]" />
                   <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-primary/60 [animation-delay:300ms]" />
                 </div>
-                <button
-                  onClick={handleCancelGeneration}
-                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2" /></svg>
-                  Stop
-                </button>
               </div>
             </div>
           )}

@@ -8,8 +8,9 @@ const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 // ── Active generations (shared with chat route via global) ──
 interface GenerationState {
   content: string;
+  thinking: string;
   status: "generating" | "done" | "failed";
-  callbacks: Set<(chunk: string, status: string) => void>;
+  callbacks: Set<(chunk: string, status: string, thinking?: string) => void>;
 }
 
 // Access the same global map as the chat route
@@ -31,10 +32,13 @@ export async function GET(req: NextRequest) {
         const encoder = new TextEncoder();
         let closed = false;
 
-        const send = (chunk: string, status: string) => {
+        const send = (chunk: string, status: string, thinking?: string) => {
           if (closed) return;
           try {
-            if (chunk) controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: chunk, status })}\n\n`));
+            const data: Record<string, unknown> = { status };
+            if (chunk) data.content = chunk;
+            if (thinking) data.thinking = thinking;
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
             if (status === "done" || status === "failed") {
               controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: "", status, done: true })}\n\n`));
               closed = true;
@@ -44,6 +48,7 @@ export async function GET(req: NextRequest) {
         };
 
         // Send current content immediately
+        if (gen.thinking) send("", gen.status, gen.thinking);
         if (gen.content) send(gen.content, gen.status);
         if (gen.status === "done" || gen.status === "failed") return;
 
@@ -68,6 +73,7 @@ export async function GET(req: NextRequest) {
     async start(controller) {
       const encoder = new TextEncoder();
       let lastLen = 0;
+      let lastThinkingLen = 0;
       let closed = false;
 
       const sendDone = (status: string) => {
@@ -82,13 +88,20 @@ export async function GET(req: NextRequest) {
       // Poll DB for content
       while (!closed) {
         try {
-          const res = await fetch(`${supabaseUrl}/rest/v1/messages?id=eq.${messageId}&select=content,status`, {
+          const res = await fetch(`${supabaseUrl}/rest/v1/messages?id=eq.${messageId}&select=content,thinking,status`, {
             headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
           });
           const data = await res.json();
           const msg = data?.[0];
 
           if (!msg) { sendDone("failed"); break; }
+
+          // Send thinking content if available
+          const newThinking = (msg.thinking || "").slice(lastThinkingLen);
+          if (newThinking) {
+            lastThinkingLen = msg.thinking.length;
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ thinking: newThinking, status: msg.status })}\n\n`));
+          }
 
           const newContent = (msg.content || "").slice(lastLen);
           if (newContent) {

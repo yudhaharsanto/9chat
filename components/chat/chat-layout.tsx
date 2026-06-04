@@ -3,20 +3,25 @@
 import { useState, useEffect } from "react";
 import { ConversationSidebar } from "@/components/sidebar/conversation-sidebar";
 import { ChatArea } from "@/components/chat/chat-area";
+import { ContextPanel } from "@/components/chat/context-panel";
 import { Button } from "@/components/ui/button";
-import { PanelLeftClose, PanelLeft, Moon, Sun, Settings, Menu, X } from "lucide-react";
+import { PanelLeftClose, PanelLeft, Moon, Sun, Settings, Menu, X, FileText } from "lucide-react";
 import { useChatContext } from "@/components/providers/chat-provider";
 import { useAuth } from "@/components/providers/auth-provider";
+import { useSettings } from "@/components/providers/settings-provider";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTheme } from "next-themes";
 import Link from "next/link";
 import { TokenIndicator } from "@/components/chat/token-indicator";
+import { ContextUsageIndicator } from "@/components/chat/context-usage-indicator";
 
 export function ChatLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileSidebar, setMobileSidebar] = useState(false);
-  const { activeConversation, activeProject, activeAgent } = useChatContext();
+  const [contextPanelOpen, setContextPanelOpen] = useState(false);
+  const { activeConversation, activeProject, activeAgent, knowledgeSources, memories, messages } = useChatContext();
   const { currentUser } = useAuth();
+  const { modelAliases } = useSettings();
   const { theme, setTheme } = useTheme();
 
   // Close mobile sidebar on resize to desktop
@@ -111,8 +116,31 @@ export function ChatLayout() {
             )}
           </div>
 
-          <div className="flex items-center gap-0.5">
+          <div className="flex items-center gap-1">
+            {currentUser && activeConversation && (
+              <ContextUsageIndicator
+                modelId={activeConversation.model}
+                messages={messages}
+                systemPrompt={activeAgent?.system_prompt || activeConversation?.system_prompt || undefined}
+                knowledgeSources={knowledgeSources}
+                memories={memories}
+                className="mr-1"
+              />
+            )}
             {currentUser && <TokenIndicator userId={currentUser.id} />}
+            <Tooltip>
+              <TooltipTrigger>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground"
+                  onClick={() => setContextPanelOpen((v) => !v)}
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Context</TooltipContent>
+            </Tooltip>
             <Tooltip>
               <TooltipTrigger>
                 <Button
@@ -143,6 +171,22 @@ export function ChatLayout() {
 
         <ChatArea />
       </div>
+
+      {/* Context Panel */}
+      {contextPanelOpen && (
+        <div className="hidden md:flex flex-shrink-0 w-[300px] border-l border-border/40 overflow-hidden">
+          <ContextPanel
+            systemPrompt={activeAgent?.system_prompt || activeConversation?.system_prompt || undefined}
+            knowledgeSources={knowledgeSources}
+            memories={memories}
+            modelName={activeConversation?.model ? (modelAliases[activeConversation.model] || activeConversation.model) : undefined}
+            modelId={activeConversation?.model}
+            userName={currentUser?.display_name || currentUser?.username}
+            messageCount={messages.length}
+            className="w-[300px]"
+          />
+        </div>
+      )}
     </div>
   );
 }

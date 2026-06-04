@@ -80,7 +80,9 @@ export interface Message {
   conversation_id: string;
   role: "user" | "assistant" | "system";
   content: string;
+  thinking?: string | null;
   tokens_used: number | null;
+  response_time_ms?: number | null;
   created_at: string;
   edit_group_id?: string | null;
   branch_index?: number | null;

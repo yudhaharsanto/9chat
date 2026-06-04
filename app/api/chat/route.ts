@@ -38,8 +38,9 @@ async function supabaseInsert(table: string, body: Record<string, unknown>) {
 // ── Active generations (in-memory, shared via globalThis) ──
 interface GenerationState {
   content: string;
+  thinking: string;
   status: "generating" | "done" | "failed";
-  callbacks: Set<(chunk: string, status: string) => void>;
+  callbacks: Set<(chunk: string, status: string, thinking?: string) => void>;
   controller: AbortController;
 }
 
@@ -48,9 +49,9 @@ if (!(globalThis as unknown as { __activeGenerations?: Map<string, GenerationSta
 }
 const activeGenerations = (globalThis as unknown as { __activeGenerations: Map<string, GenerationState> }).__activeGenerations;
 
-function emit(gen: GenerationState, chunk: string) {
+function emit(gen: GenerationState, chunk: string, thinking?: string) {
   for (const cb of gen.callbacks) {
-    try { cb(chunk, gen.status); } catch {}
+    try { cb(chunk, gen.status, thinking); } catch {}
   }
 }
 
@@ -68,10 +69,12 @@ async function runGeneration(
   conversationId?: string,
 ) {
   const controller = new AbortController();
-  const gen: GenerationState = { content: "", status: "generating", callbacks: new Set(), controller };
+  const gen: GenerationState = { content: "", thinking: "", status: "generating", callbacks: new Set(), controller };
   activeGenerations.set(messageId, gen);
 
   let lastFlushLen = 0;
+  const startTime = Date.now();
+  let firstTokenTime: number | null = null;
 
   // Auto-timeout: abort if generation takes too long
   const timeoutId = setTimeout(() => {
@@ -114,11 +117,27 @@ async function runGeneration(
       for (const line of lines) {
         if (!line.startsWith("data: ") || line.includes("[DONE]")) continue;
         try {
-          const delta = JSON.parse(line.slice(6)).choices?.[0]?.delta?.content;
-          if (delta) {
-            gen.content += delta;
-            outputTokens += Math.ceil(delta.length / 4);
-            emit(gen, delta);
+          const parsed = JSON.parse(line.slice(6));
+          const delta = parsed.choices?.[0]?.delta;
+          
+          // Handle thinking/reasoning content
+          // Different providers use different fields:
+          // - DeepSeek: reasoning_content
+          // - Claude: thinking (in content blocks)
+          // - OpenAI: reasoning
+          const thinkingDelta = delta?.reasoning_content || delta?.reasoning || delta?.thinking;
+          if (thinkingDelta) {
+            gen.thinking += thinkingDelta;
+            emit(gen, "", thinkingDelta);
+          }
+          
+          // Handle regular content
+          const contentDelta = delta?.content;
+          if (contentDelta) {
+            if (!firstTokenTime) firstTokenTime = Date.now();
+            gen.content += contentDelta;
+            outputTokens += Math.ceil(contentDelta.length / 4);
+            emit(gen, contentDelta);
 
             // Flush to DB every ~500 chars
             if (gen.content.length - lastFlushLen > 500) {
@@ -132,7 +151,12 @@ async function runGeneration(
 
     // Final flush
     gen.status = "done";
+    const responseTimeMs = Date.now() - startTime;
     await flushToDb(messageId, gen.content, "done");
+    // Save thinking content and response time
+    const updateBody: Record<string, unknown> = { response_time_ms: responseTimeMs };
+    if (gen.thinking) updateBody.thinking = gen.thinking;
+    await supabaseUpdate("messages", `id=eq.${messageId}`, updateBody);
 
     // Token tracking (fire-and-forget)
     if (userId && supabaseUrl && outputTokens > 0) {
@@ -174,6 +198,16 @@ function cancelGeneration(messageId: string): boolean {
     return true;
   }
   return false;
+}
+
+// ── Thinking models detection ──
+function isThinkingModel(model: string): boolean {
+  const thinkingPatterns = [
+    "-thinking", "-think", "-reasoning", "-r1", "-o1", "-o3",
+    "qwq", "deepseek-r", "reasoning",
+  ];
+  const lower = model.toLowerCase();
+  return thinkingPatterns.some((p) => lower.includes(p));
 }
 
 // ── Convert message images ──

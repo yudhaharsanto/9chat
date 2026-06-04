@@ -6,7 +6,7 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 export async function POST(req: NextRequest) {
-  const { id, content, status } = await req.json();
+  const { id, content, thinking, response_time_ms, status } = await req.json();
 
   if (!id) {
     return Response.json({ error: "Missing id" }, { status: 400 });
@@ -14,6 +14,8 @@ export async function POST(req: NextRequest) {
 
   const body: Record<string, unknown> = {};
   if (content !== undefined) body.content = content;
+  if (thinking !== undefined) body.thinking = thinking;
+  if (response_time_ms !== undefined) body.response_time_ms = response_time_ms;
   if (status !== undefined) body.status = status;
 
   const res = await fetch(`${supabaseUrl}/rest/v1/messages?id=eq.${id}`, {

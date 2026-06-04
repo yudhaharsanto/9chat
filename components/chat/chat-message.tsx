@@ -2,9 +2,10 @@
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Copy, Check, User, Sparkles, RotateCcw, Pencil, ChevronDown } from "lucide-react";
+import { Copy, Check, User, Sparkles, RotateCcw, Pencil, ChevronDown, FileCode } from "lucide-react";
 import React, { useState } from "react";
 import { toast } from "sonner";
+import { ThinkingBlock } from "./thinking-block";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
@@ -48,11 +49,15 @@ function renderUserContent(content: string) {
 interface ChatMessageProps {
   role: "user" | "assistant";
   content?: string;
+  thinking?: string;
   isStreaming?: boolean;
+  isThinking?: boolean;
   onRetry?: () => void;
   onEdit?: () => void;
   createdAt?: string;
   status?: "generating" | "done" | "failed";
+  responseTimeMs?: number | null;
+  tokensUsed?: number | null;
 }
 
 function formatTimestamp(iso: string): string {
@@ -71,11 +76,22 @@ function formatTimestamp(iso: string): string {
   }
 }
 
-export function ChatMessage({ role, content, isStreaming, onRetry, onEdit, createdAt, status }: ChatMessageProps) {
+function formatResponseTime(ms: number): string {
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
+export function ChatMessage({ role, content, thinking, isStreaming, isThinking, onRetry, onEdit, createdAt, status, responseTimeMs, tokensUsed }: ChatMessageProps) {
   const [copied, setCopied] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const isUser = role === "user";
   const isLong = (content || "").length > 2000 || (content || "").split("\n").length > 40;
+
+  // Extract all code blocks from content
+  const codeBlocks = content ? 
+    [...content.matchAll(/```(?:\w+)?\n([\s\S]*?)```/g)].map((m) => m[1].trim()) : [];
+  const hasCodeBlocks = codeBlocks.length > 0;
 
   return (
     <div>
@@ -104,7 +120,9 @@ export function ChatMessage({ role, content, isStreaming, onRetry, onEdit, creat
             {isUser ? (
               content ? renderUserContent(content) : null
             ) : (
-              <div className="prose-chat break-words">
+              <>
+                <ThinkingBlock content={thinking || ""} isStreaming={isThinking} />
+                <div className="prose-chat break-words">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm, remarkMath]}
                   rehypePlugins={[rehypeHighlight, rehypeKatex]}
@@ -158,7 +176,8 @@ export function ChatMessage({ role, content, isStreaming, onRetry, onEdit, creat
                 {isStreaming && (
                   <span className="inline-block h-4 w-0.5 animate-pulse rounded-full bg-primary" />
                 )}
-              </div>
+                </div>
+              </>
             )}
           </div>
 
@@ -173,9 +192,20 @@ export function ChatMessage({ role, content, isStreaming, onRetry, onEdit, creat
             </button>
           )}
 
-          <div className="flex items-center gap-2 align-center">
+          <div className="flex items-center gap-2 align-center flex-wrap">
             {createdAt && (
               <span className="ml-1 text-[10px] text-muted-foreground/40">{formatTimestamp(createdAt)}</span>
+            )}
+            {!isUser && responseTimeMs && responseTimeMs > 0 && (
+              <span className="text-[10px] text-muted-foreground/40 flex items-center gap-0.5">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                {formatResponseTime(responseTimeMs)}
+              </span>
+            )}
+            {!isUser && tokensUsed && tokensUsed > 0 && (
+              <span className="text-[10px] text-muted-foreground/40">
+                {tokensUsed.toLocaleString()} tok
+              </span>
             )}
             {status === "failed" && (
               <span className="ml-1 flex items-center gap-1 text-[10px] text-red-500">
@@ -197,6 +227,22 @@ export function ChatMessage({ role, content, isStreaming, onRetry, onEdit, creat
                 >
                   {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
                 </Button>
+                {!isUser && hasCodeBlocks && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground"
+                    title={"Copy all code blocks"}
+                    onClick={() => {
+                      navigator.clipboard.writeText(codeBlocks.join("\n\n---\n\n"));
+                      setCodeCopied(true);
+                      toast.success(`Copied ${codeBlocks.length} code block${codeBlocks.length > 1 ? "s" : ""}!`, { duration: 1500 });
+                      setTimeout(() => setCodeCopied(false), 2000);
+                    }}
+                  >
+                    {codeCopied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <FileCode className="h-3.5 w-3.5" />}
+                  </Button>
+                )}
                 {isUser && onEdit && !content.match(/!\[.*\]\(.*\)/) && (
                   <Button
                     variant="ghost"
