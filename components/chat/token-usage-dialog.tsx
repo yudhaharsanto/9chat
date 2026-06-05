@@ -202,7 +202,7 @@ export function TokenUsageDialog({ open, onClose, user, onUpdated }: TokenUsageD
                   <Label className="text-xs font-medium">Penggunaan per Model</Label>
                   <Badge variant="secondary" className="text-[9px] ml-auto">{modelEntries.length} model</Badge>
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {modelEntries.map(([model, stats], i) => {
                     const total = stats.input + stats.output;
                     if (total === 0) return null;
@@ -210,27 +210,35 @@ export function TokenUsageDialog({ open, onClose, user, onUpdated }: TokenUsageD
                     const color = modelColors[i % modelColors.length];
                     const displayName = getDisplayName(model);
                     return (
-                      <div key={model} className="space-y-1">
+                      <div key={model} className="space-y-1.5">
                         <div className="flex items-center justify-between gap-2">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span className={`inline-block h-2 w-2 rounded-full ${color} shrink-0`} />
-                            <span className="font-medium text-[11px] truncate">{displayName}</span>
-                            <span className="text-[9px] text-muted-foreground shrink-0">{stats.count}×</span>
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className={`inline-block h-2.5 w-2.5 rounded-full ${color} shrink-0`} />
+                            <span className="font-medium text-xs truncate">{displayName}</span>
                           </div>
-                          <div className="flex items-center gap-2 text-[10px] tabular-nums shrink-0">
-                            <span className="text-blue-500">↓{stats.input.toLocaleString()}</span>
-                            <span className="text-green-500">↑{stats.output.toLocaleString()}</span>
-                            <span className="font-medium">{total.toLocaleString()}</span>
+                          <span className="text-xs text-muted-foreground tabular-nums shrink-0">{total.toLocaleString()} tok</span>
+                        </div>
+                        <div className="relative h-2 w-full rounded-full bg-muted overflow-hidden">
+                          <div
+                            className={`absolute inset-y-0 left-0 rounded-full ${color} transition-all duration-300`}
+                            style={{ width: `${Math.max(barPct, 2)}%` }}
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-[8px] font-medium tabular-nums mix-blend-difference text-white px-1">
+                              {barPct.toFixed(0)}%
+                            </span>
                           </div>
                         </div>
-                        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                          <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.max(barPct, 1)}%` }} />
+                        <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                          <span className="text-blue-500">↓{stats.input.toLocaleString()}</span>
+                          <span className="text-green-500">↑{stats.output.toLocaleString()}</span>
+                          <span>{stats.count}×</span>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-                <p className="text-[9px] text-muted-foreground pt-1 border-t">Bar = total token per model relatif terhadap model terbanyak</p>
+                <p className="text-[10px] text-muted-foreground pt-1 border-t">Persentase relatif terhadap model dengan penggunaan terbanyak</p>
               </div>
             )}
 

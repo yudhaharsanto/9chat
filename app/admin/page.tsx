@@ -179,21 +179,21 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm safe-area-top">
-        <div className="mx-auto flex h-12 md:h-14 max-w-6xl items-center justify-between px-2.5 sm:px-3 md:px-4">
-          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
-            <Link href="/"><Button variant="ghost" size="icon" className="h-9 w-9 md:h-8 md:w-8"><ArrowLeft className="h-4 w-4" /></Button></Link>
-            <Settings className="h-4 w-4 md:h-5 md:w-5 text-primary" /><h1 className="text-sm md:text-lg font-semibold">Admin</h1>
+        <div className="mx-auto flex h-12 md:h-14 max-w-6xl items-center justify-between px-3 sm:px-4 md:px-6">
+          <div className="flex items-center gap-2">
+            <Link href="/"><Button variant="ghost" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button></Link>
+            <Settings className="h-4 w-4 text-primary" /><h1 className="text-sm font-semibold">Admin</h1>
           </div>
-          <Button variant="outline" size="sm" onClick={s.adminLogout}><Lock className="h-3.5 w-3.5 mr-1.5" />Lock</Button>
+          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={s.adminLogout}><Lock className="h-3 w-3 mr-1" />Lock</Button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-2.5 sm:px-3 md:px-4 py-3 md:py-6 w-full safe-area-bottom">
-        <Tabs defaultValue="connection" className="space-y-4 md:space-y-6">
-          <div className="overflow-x-auto -mx-2.5 px-2.5 sm:-mx-3 sm:px-3 md:mx-0 md:px-0 scrollbar-none">
-            <TabsList className="h-9 md:h-10 w-max md:w-auto flex-nowrap md:flex-wrap min-w-0">
+      <main className="mx-auto max-w-6xl px-3 sm:px-4 md:px-6 py-3 md:py-6 w-full safe-area-bottom">
+        <Tabs defaultValue="connection" className="space-y-3 md:space-y-5">
+          <div className="overflow-x-auto scrollbar-none -mx-3 px-3 sm:-mx-4 sm:px-4 md:mx-0 md:px-0">
+            <TabsList className="h-9 md:h-10 w-max md:w-auto flex-nowrap md:flex-wrap">
             <TabsTrigger value="connection" className="gap-1.5 text-xs"><Server className="h-3.5 w-3.5" />Connection</TabsTrigger>
             <TabsTrigger value="models" className="gap-1.5 text-xs"><Cpu className="h-3.5 w-3.5" />Models</TabsTrigger>
             <TabsTrigger value="users" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" />Users</TabsTrigger>
@@ -206,7 +206,7 @@ export default function AdminPage() {
 
           <TabsContent value="connection" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4">
+              <div className="rounded-xl border bg-card p-4 space-y-3">
                 <div className="flex items-center gap-2"><div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10"><Server className="h-4 w-4 text-primary" /></div><div><h3 className="text-sm font-semibold">9router</h3><p className="text-xs text-muted-foreground">AI Gateway</p></div></div>
                 <div className="space-y-3">
                   <div className="space-y-1.5"><Label className="text-xs">URL</Label><Input value={form.routerUrl} onChange={(e) => setForm((f) => ({ ...f, routerUrl: e.target.value }))} className="h-9 text-sm" /></div>
@@ -217,7 +217,7 @@ export default function AdminPage() {
                 </div>
               </div>
               {/* Database — auto-detected from env */}
-              <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4">
+              <div className="rounded-xl border bg-card p-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10"><CheckCircle2 className="h-4 w-4 text-green-600" /></div>
                   <div>
@@ -239,7 +239,7 @@ export default function AdminPage() {
             </div>
 
             {/* ImgBB */}
-            <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4">
+            <div className="rounded-xl border bg-card p-4 space-y-3">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10"><HardDrive className="h-4 w-4 text-blue-600" /></div>
                 <div>
@@ -271,7 +271,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="models" className="space-y-4">
-            <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4">
+            <div className="rounded-xl border bg-card p-4 space-y-3">
               <div className="flex items-center justify-between"><div><h3 className="text-sm font-semibold">Models</h3><p className="text-xs text-muted-foreground">Toggle visibility + set aliases + image support</p></div><div className="flex items-center gap-2"><Badge variant="secondary" className="text-xs">{s.modelsFilterActive ? `${s.enabledModels.length}/${allModels.length}` : `All ${allModels.length}`}</Badge>{Object.values(s.modelImageSupport).filter(Boolean).length > 0 && <Badge variant="secondary" className="text-xs gap-1"><ImageIcon className="h-2.5 w-2.5" />{Object.values(s.modelImageSupport).filter(Boolean).length} img</Badge>}</div></div>
               <div className="flex items-center gap-2">
                 <div className="relative flex-1"><Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" /><Input placeholder="Search..." value={modelSearch} onChange={(e) => setModelSearch(e.target.value)} className="h-8 pl-8 text-xs" /></div>
@@ -305,7 +305,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="users" className="space-y-4">
-            <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4">
+            <div className="rounded-xl border bg-card p-4 space-y-3">
               <h3 className="text-sm font-semibold">Create User</h3>
               <div className="grid gap-2 sm:gap-3 sm:grid-cols-4">
                 <Input placeholder="Username" value={newUser.username} onChange={(e) => setNewUser((u) => ({ ...u, username: e.target.value }))} className="h-9 text-sm" />
@@ -314,7 +314,7 @@ export default function AdminPage() {
                 <Button onClick={handleCreateUser} className="gap-1.5"><Plus className="h-4 w-4" />Create</Button>
               </div>
             </div>
-            <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-2 sm:space-y-3">
+            <div className="rounded-xl border bg-card p-4 space-y-3">
               <h3 className="text-sm font-semibold">Users</h3>
               {users.map((u) => (
                 <div key={u.id} className="rounded-lg border p-3 sm:p-4 space-y-3">
@@ -372,7 +372,7 @@ export default function AdminPage() {
 
           <TabsContent value="agents" className="space-y-4">
             <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">AI Agents</h3><Button size="sm" onClick={() => setEditAgent({ name: "", description: "", icon: "🤖", system_prompt: "", model: "gpt-4o", temperature: 0.7, max_tokens: 4096, is_public: true })}><Plus className="h-4 w-4 mr-1" />New</Button></div>
-            {editAgent && <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-2 sm:space-y-3">
+            {editAgent && <div className="rounded-xl border bg-card p-4 space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5"><Label className="text-xs">Name</Label><Input value={editAgent.name || ""} onChange={(e) => setEditAgent((a) => ({ ...a, name: e.target.value }))} className="h-9 text-sm" /></div>
                 <div className="space-y-1.5"><Label className="text-xs">Icon</Label><Input value={editAgent.icon || ""} onChange={(e) => setEditAgent((a) => ({ ...a, icon: e.target.value }))} className="h-9 text-sm" /></div>
@@ -407,7 +407,7 @@ export default function AdminPage() {
 
           <TabsContent value="skills" className="space-y-4">
             <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">Skills</h3><Button size="sm" onClick={() => setEditSkill({ name: "", description: "", icon: "⚡", prompt_template: "", category: "general" })}><Plus className="h-4 w-4 mr-1" />New</Button></div>
-            {editSkill && <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-2 sm:space-y-3">
+            {editSkill && <div className="rounded-xl border bg-card p-4 space-y-3">
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="space-y-1.5"><Label className="text-xs">Name</Label><Input value={editSkill.name || ""} onChange={(e) => setEditSkill((s) => ({ ...s, name: e.target.value }))} className="h-9 text-sm" /></div>
                 <div className="space-y-1.5"><Label className="text-xs">Icon</Label><Input value={editSkill.icon || ""} onChange={(e) => setEditSkill((s) => ({ ...s, icon: e.target.value }))} className="h-9 text-sm" /></div>
@@ -425,7 +425,7 @@ export default function AdminPage() {
 
           <TabsContent value="knowledge" className="space-y-4">
             <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">Knowledge Sources</h3><Button size="sm" onClick={() => setEditKnowledge({ name: "", description: "", content: "" })}><Plus className="h-4 w-4 mr-1" />New</Button></div>
-            {editKnowledge && <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-2 sm:space-y-3">
+            {editKnowledge && <div className="rounded-xl border bg-card p-4 space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5"><Label className="text-xs">Name</Label><Input value={editKnowledge.name || ""} onChange={(e) => setEditKnowledge((k) => ({ ...k, name: e.target.value }))} className="h-9 text-sm" /></div>
                 <div className="space-y-1.5"><Label className="text-xs">Description</Label><Input value={editKnowledge.description || ""} onChange={(e) => setEditKnowledge((k) => ({ ...k, description: e.target.value }))} className="h-9 text-sm" /></div>
@@ -440,7 +440,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="security" className="space-y-4">
-            <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4 max-w-md">
+            <div className="rounded-xl border bg-card p-4 space-y-3 max-w-md">
               <div className="flex items-center gap-2"><Key className="h-5 w-5 text-amber-600" /><h3 className="text-sm font-semibold">Admin Password</h3></div>
               <div className="space-y-3">
                 <Input type="password" placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="h-9 text-sm" />
