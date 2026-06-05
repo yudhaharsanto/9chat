@@ -166,7 +166,7 @@ export function TokenUsageDialog({ open, onClose, user, onUpdated }: TokenUsageD
               {limit != null && (
                 <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
                   <div
-                    className={`h-full rounded-l-full ${usagePercent && usagePercent > 90 ? "bg-destructive" : usagePercent && usagePercent > 70 ? "bg-amber-500" : "bg-primary"}`}
+                    className={`h-full rounded-full ${usagePercent && usagePercent > 90 ? "bg-destructive" : usagePercent && usagePercent > 70 ? "bg-amber-500" : "bg-primary"}`}
                     style={{ width: `${usagePercent}%` }}
                   />
                 </div>
@@ -221,7 +221,7 @@ export function TokenUsageDialog({ open, onClose, user, onUpdated }: TokenUsageD
                         </div>
                         <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                           <div
-                            className={`h-full rounded-l-full ${color}`}
+                            className={`h-full rounded-full ${color}`}
                             style={{ width: `${Math.max(pct, 1.5)}%` }}
                           />
                         </div>
