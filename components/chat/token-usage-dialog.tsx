@@ -110,9 +110,7 @@ export function TokenUsageDialog({ open, onClose, user, onUpdated }: TokenUsageD
     ? Object.entries(data.byModel)
         .sort(([, a], [, b]) => (b.input + b.output) - (a.input + a.output))
     : [];
-  const maxModelTokens = modelEntries.length > 0
-    ? modelEntries[0][1].input + modelEntries[0][1].output
-    : 0;
+  const grandTotal = modelEntries.reduce((sum, [, s]) => sum + s.input + s.output, 0);
 
   // Color palette for models
   const modelColors = [
@@ -206,7 +204,7 @@ export function TokenUsageDialog({ open, onClose, user, onUpdated }: TokenUsageD
                   {modelEntries.map(([model, stats], i) => {
                     const total = stats.input + stats.output;
                     if (total === 0) return null;
-                    const barPct = maxModelTokens > 0 ? (total / maxModelTokens) * 100 : 0;
+                    const pct = grandTotal > 0 ? (total / grandTotal) * 100 : 0;
                     const color = modelColors[i % modelColors.length];
                     const displayName = getDisplayName(model);
                     return (
@@ -216,18 +214,16 @@ export function TokenUsageDialog({ open, onClose, user, onUpdated }: TokenUsageD
                             <span className={`inline-block h-2.5 w-2.5 rounded-full ${color} shrink-0`} />
                             <span className="font-medium text-xs truncate">{displayName}</span>
                           </div>
-                          <span className="text-xs text-muted-foreground tabular-nums shrink-0">{total.toLocaleString()} tok</span>
-                        </div>
-                        <div className="relative h-2 w-full rounded-full bg-muted overflow-hidden">
-                          <div
-                            className={`absolute inset-y-0 left-0 rounded-full ${color} transition-all duration-300`}
-                            style={{ width: `${Math.max(barPct, 2)}%` }}
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-[8px] font-medium tabular-nums mix-blend-difference text-white px-1">
-                              {barPct.toFixed(0)}%
-                            </span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="text-[10px] text-muted-foreground tabular-nums">{total.toLocaleString()} tok</span>
+                            <span className="text-[10px] font-medium tabular-nums w-8 text-right">{pct.toFixed(0)}%</span>
                           </div>
+                        </div>
+                        <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                          <div
+                            className={`h-full rounded-full ${color} transition-all duration-300`}
+                            style={{ width: `${Math.max(pct, 1.5)}%` }}
+                          />
                         </div>
                         <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
                           <span className="text-blue-500">↓{stats.input.toLocaleString()}</span>
