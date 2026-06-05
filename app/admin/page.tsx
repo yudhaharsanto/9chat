@@ -183,10 +183,10 @@ export default function AdminPage() {
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm safe-area-top">
         <div className="mx-auto flex h-12 md:h-14 max-w-6xl items-center justify-between px-3 sm:px-4 md:px-6">
           <div className="flex items-center gap-2">
-            <Link href="/"><Button variant="ghost" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button></Link>
+            <Link href="/"><Button variant="ghost" size="icon" className="h-7 w-7"><ArrowLeft className="h-3.5 w-3.5" /></Button></Link>
             <Settings className="h-4 w-4 text-primary" /><h1 className="text-sm font-semibold">Admin</h1>
           </div>
-          <Button variant="outline" size="sm" className="h-7 text-xs" onClick={s.adminLogout}><Lock className="h-3 w-3 mr-1" />Lock</Button>
+          <Button variant="outline" size="sm" className="h-6 text-xs" onClick={s.adminLogout}><Lock className="h-3 w-3 mr-1" />Lock</Button>
         </div>
       </header>
 
@@ -274,10 +274,10 @@ export default function AdminPage() {
             <div className="rounded-xl border bg-card p-4 space-y-3">
               <div className="flex items-center justify-between"><div><h3 className="text-sm font-semibold">Models</h3><p className="text-xs text-muted-foreground">Toggle visibility + set aliases + image support</p></div><div className="flex items-center gap-2"><Badge variant="secondary" className="text-xs">{s.modelsFilterActive ? `${s.enabledModels.length}/${allModels.length}` : `All ${allModels.length}`}</Badge>{Object.values(s.modelImageSupport).filter(Boolean).length > 0 && <Badge variant="secondary" className="text-xs gap-1"><ImageIcon className="h-2.5 w-2.5" />{Object.values(s.modelImageSupport).filter(Boolean).length} img</Badge>}</div></div>
               <div className="flex items-center gap-2">
-                <div className="relative flex-1"><Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" /><Input placeholder="Search..." value={modelSearch} onChange={(e) => setModelSearch(e.target.value)} className="h-8 pl-8 text-xs" /></div>
-                <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => s.setEnabledModels(allModels.map((m) => m.id))}>All</Button>
-                <Button variant="outline" size="sm" className="text-xs h-8" onClick={() => s.setEnabledModels([])}>None</Button>
-                {!allModels.length && <Button variant="outline" size="sm" className="text-xs h-8" onClick={handleTest9router}>Load</Button>}
+                <div className="relative flex-1"><Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" /><Input placeholder="Search..." value={modelSearch} onChange={(e) => setModelSearch(e.target.value)} className="h-7 pl-8 text-xs" /></div>
+                <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => s.setEnabledModels(allModels.map((m) => m.id))}>All</Button>
+                <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => s.setEnabledModels([])}>None</Button>
+                {!allModels.length && <Button variant="outline" size="sm" className="text-xs h-7" onClick={handleTest9router}>Load</Button>}
               </div>
               {allModels.length > 0 ? (
                 <div className="max-h-[500px] space-y-1 overflow-y-auto pr-1">
@@ -327,14 +327,14 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                      <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1" onClick={() => setTokenDialogUser(u)}>
+                      <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" onClick={() => setTokenDialogUser(u)}>
                         <Zap className="h-3 w-3" />
                         {(u.token_input_used || 0) + (u.token_output_used || 0) > 0
                           ? `${((u.token_input_used || 0) + (u.token_output_used || 0)).toLocaleString()} tok`
                           : "Tokens"}
                       </Button>
                       <Switch checked={u.is_active} onCheckedChange={(v) => createClient().from("users").update({ is_active: v }).eq("id", u.id).then(loadUsers)} />
-                      {u.role !== "admin" && <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => createClient().from("users").delete().eq("id", u.id).then(() => { toast.success("Deleted"); loadUsers(); })}><Trash2 className="h-3.5 w-3.5" /></Button>}
+                      {u.role !== "admin" && <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => createClient().from("users").delete().eq("id", u.id).then(() => { toast.success("Deleted"); loadUsers(); })}><Trash2 className="h-3.5 w-3.5" /></Button>}
                     </div>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
@@ -401,7 +401,7 @@ export default function AdminPage() {
             </div>}
             <div className="space-y-2">{agents.map((a) => <div key={a.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 sm:px-4 py-2.5 sm:py-3">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0"><span className="text-lg">{a.icon}</span><div className="min-w-0"><p className="text-sm font-medium truncate">{a.name}</p><p className="text-[10px] text-muted-foreground truncate">{a.description}</p></div></div>
-              <div className="flex items-center gap-1 shrink-0">{a.is_public && <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex">Public</Badge>}<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditAgent(a)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => createClient().from("agents").delete().eq("id", a.id).then(() => { toast.success("Deleted"); loadAgentsList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
+              <div className="flex items-center gap-1 shrink-0">{a.is_public && <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex">Public</Badge>}<Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditAgent(a)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => createClient().from("agents").delete().eq("id", a.id).then(() => { toast.success("Deleted"); loadAgentsList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
             </div>)}</div>
           </TabsContent>
 
@@ -419,7 +419,7 @@ export default function AdminPage() {
             </div>}
             <div className="space-y-2">{skills.map((sk) => <div key={sk.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 sm:px-4 py-2.5 sm:py-3">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0"><span>{sk.icon}</span><div className="min-w-0"><p className="text-sm font-medium truncate">{sk.name}</p><p className="text-[10px] text-muted-foreground truncate">{sk.description}</p></div><Badge variant="outline" className="text-[10px] hidden sm:inline-flex shrink-0">{sk.category}</Badge></div>
-              <div className="flex items-center gap-1 shrink-0"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditSkill(sk)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => createClient().from("skills").delete().eq("id", sk.id).then(() => { toast.success("Deleted"); loadSkillsList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
+              <div className="flex items-center gap-1 shrink-0"><Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditSkill(sk)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => createClient().from("skills").delete().eq("id", sk.id).then(() => { toast.success("Deleted"); loadSkillsList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
             </div>)}</div>
           </TabsContent>
 
@@ -435,7 +435,7 @@ export default function AdminPage() {
             </div>}
             <div className="space-y-2">{knowledge.map((k) => <div key={k.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 sm:px-4 py-2.5 sm:py-3">
               <div className="min-w-0"><p className="text-sm font-medium truncate">{k.name}</p><p className="text-[10px] text-muted-foreground truncate">{k.description} · {k.content.length} chars</p></div>
-              <div className="flex items-center gap-1 shrink-0"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditKnowledge(k)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => createClient().from("knowledge_sources").delete().eq("id", k.id).then(() => { toast.success("Deleted"); loadKnowledgeList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
+              <div className="flex items-center gap-1 shrink-0"><Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setEditKnowledge(k)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-6 w-6 text-destructive" onClick={() => createClient().from("knowledge_sources").delete().eq("id", k.id).then(() => { toast.success("Deleted"); loadKnowledgeList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
             </div>)}</div>
           </TabsContent>
 
