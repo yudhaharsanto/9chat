@@ -71,12 +71,12 @@ export function ModelSelector({ selectedModel, onSelectModel }: ModelSelectorPro
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger className="inline-flex h-8 items-center gap-2 rounded-full border border-border/60 bg-card/50 px-3 text-xs font-medium backdrop-blur-sm transition-all hover:bg-card hover:shadow-sm cursor-pointer whitespace-nowrap">
-          <Cpu className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="max-w-[200px] truncate">
+      <PopoverTrigger className="inline-flex h-8 items-center gap-1.5 rounded-full border border-border/60 bg-card/50 px-2.5 sm:px-3 text-xs font-medium backdrop-blur-sm transition-all hover:bg-card hover:shadow-sm cursor-pointer">
+          <Cpu className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="max-w-[100px] sm:max-w-[200px] truncate">
             {loading ? "Loading..." : selected ? getDisplayName(selected.id) : error ? "Error" : "Select model"}
           </span>
-          {selected && (modelImageSupport[selected.id] ?? false) && <Eye className="h-3 w-3 text-muted-foreground" />}
+          {selected && (modelImageSupport[selected.id] ?? false) && <Eye className="h-3 w-3 text-muted-foreground shrink-0" />}
           <ChevronsUpDown className="h-3 w-3 shrink-0 opacity-40" />
       </PopoverTrigger>
       <PopoverContent className="w-[380px] p-0 rounded-xl" align="center">

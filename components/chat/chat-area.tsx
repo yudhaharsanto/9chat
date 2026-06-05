@@ -554,7 +554,7 @@ export function ChatArea() {
 
   const handleSend = async (content: string) => {
     if (!selectedModel) {
-      toast.error("Pilih model dulu sebelum chat");
+      toast.error("Select a model first");
       return;
     }
     let convId = activeConversation?.id;
@@ -686,7 +686,7 @@ export function ChatArea() {
   if (!activeConversation && messages.length === 0) {
     return (
       <div className="flex flex-1 flex-col">
-        <div className="flex items-center justify-center gap-2 border-b border-border/40 bg-background/60 backdrop-blur-sm py-2.5 px-2 overflow-x-auto">
+        <div className="flex items-center justify-center gap-1.5 sm:gap-2 border-b border-border/40 bg-background/60 backdrop-blur-sm py-2 sm:py-2.5 px-2 shrink-0">
           <ModelSelector selectedModel={selectedModel} onSelectModel={setSelectedModel} />
           <SkillSelector skills={skills} selectedSkill={selectedSkill} onSelectSkill={setSelectedSkill} />
           <KnowledgeSelector knowledgeSources={knowledgeSources} selectedKnowledge={selectedKnowledge} onToggleKnowledge={(k) => setSelectedKnowledge((prev) => prev.some((sk) => sk.id === k.id) ? prev.filter((sk) => sk.id !== k.id) : [...prev, k])} />
@@ -719,7 +719,7 @@ export function ChatArea() {
               )}
               {!activeAgent && !currentUser?.default_model && (
                 <div className="mt-3">
-                  <p className="text-xs text-amber-500 font-medium">Pilih model dulu untuk mulai chat</p>
+                  <p className="text-xs text-amber-500 font-medium">Select a model to start chatting</p>
                 </div>
               )}
             </div>
@@ -787,7 +787,7 @@ export function ChatArea() {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Header bar */}
-      <div className="flex items-center justify-center gap-2 border-b border-border/40 bg-background/60 backdrop-blur-sm py-2.5 px-2 overflow-x-auto">
+      <div className="flex items-center justify-center gap-1.5 sm:gap-2 border-b border-border/40 bg-background/60 backdrop-blur-sm py-2 sm:py-2.5 px-2 shrink-0">
         <ModelSelector selectedModel={selectedModel} onSelectModel={(model) => {
           setSelectedModel(model);
           if (activeConversation?.id) updateConversationModel(activeConversation.id, model);
