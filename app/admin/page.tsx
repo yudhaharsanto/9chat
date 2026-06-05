@@ -183,10 +183,10 @@ export default function AdminPage() {
       <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm safe-area-top">
         <div className="mx-auto flex h-12 md:h-14 max-w-6xl items-center justify-between px-3 sm:px-4 md:px-6">
           <div className="flex items-center gap-2">
-            <Link href="/"><Button variant="ghost" size="icon" className="h-7 w-7"><ArrowLeft className="h-3.5 w-3.5" /></Button></Link>
+            <Link href="/"><Button variant="ghost" size="icon" className="h-6 w-6"><ArrowLeft className="h-3.5 w-3.5" /></Button></Link>
             <Settings className="h-4 w-4 text-primary" /><h1 className="text-sm font-semibold">Admin</h1>
           </div>
-          <Button variant="outline" size="sm" className="h-6 text-xs" onClick={s.adminLogout}><Lock className="h-3 w-3 mr-1" />Lock</Button>
+          <Button variant="outline" size="sm" onClick={s.adminLogout}><Lock className="h-3.5 w-3.5 mr-1" />Lock</Button>
         </div>
       </header>
 
@@ -211,8 +211,8 @@ export default function AdminPage() {
                 <div className="space-y-3">
                   <div className="space-y-1.5"><Label className="text-xs">URL</Label><Input value={form.routerUrl} onChange={(e) => setForm((f) => ({ ...f, routerUrl: e.target.value }))} className="h-9 text-sm" /></div>
                   <div className="space-y-1.5"><Label className="text-xs">API Key</Label><div className="relative"><Input type={showApiKey ? "text" : "password"} value={form.routerApiKey} onChange={(e) => setForm((f) => ({ ...f, routerApiKey: e.target.value }))} className="h-9 text-sm pr-9" /><Button variant="ghost" size="icon" className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6" onClick={() => setShowApiKey(!showApiKey)}><Eye className="h-3.5 w-3.5" /></Button></div></div>
-                  <Button onClick={handleTest9router} disabled={testing === "9router"} variant="outline" size="sm" className="w-full">
-                    {testing === "9router" ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : testResults["9router"] === true ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600 mr-1.5" /> : testResults["9router"] === false ? <XCircle className="h-3.5 w-3.5 text-destructive mr-1.5" /> : null}Test
+                  <Button onClick={handleTest9router} disabled={testing === "9router"} variant="outline" size="sm" className="w-full gap-1.5">
+                    {testing === "9router" ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : testResults["9router"] === true ? <CheckCircle2 className="h-3.5 w-3.5 text-green-600" /> : testResults["9router"] === false ? <XCircle className="h-3.5 w-3.5 text-destructive" /> : null}Test
                   </Button>
                 </div>
               </div>
@@ -267,7 +267,7 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="flex justify-end"><Button onClick={handleSaveAll} disabled={saving}>{saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}Save All</Button></div>
+            <div className="flex justify-end"><Button onClick={handleSaveAll} disabled={saving} className="gap-1.5">{saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}Save All</Button></div>
           </TabsContent>
 
           <TabsContent value="models" className="space-y-4">
@@ -275,9 +275,9 @@ export default function AdminPage() {
               <div className="flex items-center justify-between"><div><h3 className="text-sm font-semibold">Models</h3><p className="text-xs text-muted-foreground">Toggle visibility + set aliases + image support</p></div><div className="flex items-center gap-2"><Badge variant="secondary" className="text-xs">{s.modelsFilterActive ? `${s.enabledModels.length}/${allModels.length}` : `All ${allModels.length}`}</Badge>{Object.values(s.modelImageSupport).filter(Boolean).length > 0 && <Badge variant="secondary" className="text-xs gap-1"><ImageIcon className="h-2.5 w-2.5" />{Object.values(s.modelImageSupport).filter(Boolean).length} img</Badge>}</div></div>
               <div className="flex items-center gap-2">
                 <div className="relative flex-1"><Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" /><Input placeholder="Search..." value={modelSearch} onChange={(e) => setModelSearch(e.target.value)} className="h-7 pl-8 text-xs" /></div>
-                <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => s.setEnabledModels(allModels.map((m) => m.id))}>All</Button>
-                <Button variant="outline" size="sm" className="text-xs h-7" onClick={() => s.setEnabledModels([])}>None</Button>
-                {!allModels.length && <Button variant="outline" size="sm" className="text-xs h-7" onClick={handleTest9router}>Load</Button>}
+                <Button variant="outline" size="sm" onClick={() => s.setEnabledModels(allModels.map((m) => m.id))}>All</Button>
+                <Button variant="outline" size="sm" onClick={() => s.setEnabledModels([])}>None</Button>
+                {!allModels.length && <Button variant="outline" size="sm" onClick={handleTest9router}>Load</Button>}
               </div>
               {allModels.length > 0 ? (
                 <div className="max-h-[500px] space-y-1 overflow-y-auto pr-1">
@@ -301,7 +301,7 @@ export default function AdminPage() {
                 </div>
               ) : <div className="py-12 text-center"><Cpu className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" /><p className="text-sm text-muted-foreground">Load models first</p></div>}
             </div>
-            <div className="flex justify-end"><Button onClick={handleSaveAll}>Save</Button></div>
+            <div className="flex justify-end"><Button onClick={handleSaveAll} className="gap-1.5">Save</Button></div>
           </TabsContent>
 
           <TabsContent value="users" className="space-y-4">
@@ -311,7 +311,7 @@ export default function AdminPage() {
                 <Input placeholder="Username" value={newUser.username} onChange={(e) => setNewUser((u) => ({ ...u, username: e.target.value }))} className="h-9 text-sm" />
                 <Input type="password" placeholder="Password" value={newUser.password} onChange={(e) => setNewUser((u) => ({ ...u, password: e.target.value }))} className="h-9 text-sm" />
                 <Input placeholder="Display Name" value={newUser.display_name} onChange={(e) => setNewUser((u) => ({ ...u, display_name: e.target.value }))} className="h-9 text-sm" />
-                <Button onClick={handleCreateUser} className="gap-1.5"><Plus className="h-4 w-4" />Create</Button>
+                <Button onClick={handleCreateUser} className="gap-1.5"><Plus className="h-3.5 w-3.5" />Create</Button>
               </div>
             </div>
             <div className="rounded-xl border bg-card p-4 space-y-3">
@@ -327,8 +327,8 @@ export default function AdminPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                      <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" onClick={() => setTokenDialogUser(u)}>
-                        <Zap className="h-3 w-3" />
+                      <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setTokenDialogUser(u)}>
+                        <Zap className="h-3.5 w-3.5" />
                         {(u.token_input_used || 0) + (u.token_output_used || 0) > 0
                           ? `${((u.token_input_used || 0) + (u.token_output_used || 0)).toLocaleString()} tok`
                           : "Tokens"}
@@ -371,7 +371,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="agents" className="space-y-4">
-            <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">AI Agents</h3><Button size="sm" className="h-6 text-[10px] px-2" onClick={() => setEditAgent({ name: "", description: "", icon: "🤖", system_prompt: "", model: "gpt-4o", temperature: 0.7, max_tokens: 4096, is_public: true })}><Plus className="h-3 w-3 mr-1" />New</Button></div>
+            <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">AI Agents</h3><Button size="sm" className="gap-1.5" onClick={() => setEditAgent({ name: "", description: "", icon: "🤖", system_prompt: "", model: "gpt-4o", temperature: 0.7, max_tokens: 4096, is_public: true })}><Plus className="h-3.5 w-3.5" />New</Button></div>
             {editAgent && <div className="rounded-xl border bg-card p-4 space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5"><Label className="text-xs">Name</Label><Input value={editAgent.name || ""} onChange={(e) => setEditAgent((a) => ({ ...a, name: e.target.value }))} className="h-9 text-sm" /></div>
@@ -397,7 +397,7 @@ export default function AdminPage() {
                 </div>
                 <div className="flex items-end gap-2"><Switch checked={editAgent.is_public || false} onCheckedChange={(v) => setEditAgent((a) => ({ ...a, is_public: v }))} /><Label className="text-xs">Public</Label></div>
               </div>
-              <div className="flex gap-2"><Button onClick={handleSaveAgent} size="sm" className="h-6 text-[10px] px-2"><Save className="h-3 w-3 mr-1" />Save</Button><Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => setEditAgent(null)}>Cancel</Button></div>
+              <div className="flex gap-2"><Button onClick={handleSaveAgent} size="sm" className="gap-1.5"><Save className="h-3.5 w-3.5" />Save</Button><Button variant="outline" size="sm" onClick={() => setEditAgent(null)}>Cancel</Button></div>
             </div>}
             <div className="space-y-2">{agents.map((a) => <div key={a.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 sm:px-4 py-2.5 sm:py-3">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0"><span className="text-lg">{a.icon}</span><div className="min-w-0"><p className="text-sm font-medium truncate">{a.name}</p><p className="text-[10px] text-muted-foreground truncate">{a.description}</p></div></div>
@@ -406,7 +406,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="skills" className="space-y-4">
-            <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">Skills</h3><Button size="sm" className="h-6 text-[10px] px-2" onClick={() => setEditSkill({ name: "", description: "", icon: "⚡", prompt_template: "", category: "general" })}><Plus className="h-3 w-3 mr-1" />New</Button></div>
+            <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">Skills</h3><Button size="sm" className="gap-1.5" onClick={() => setEditSkill({ name: "", description: "", icon: "⚡", prompt_template: "", category: "general" })}><Plus className="h-3.5 w-3.5" />New</Button></div>
             {editSkill && <div className="rounded-xl border bg-card p-4 space-y-3">
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="space-y-1.5"><Label className="text-xs">Name</Label><Input value={editSkill.name || ""} onChange={(e) => setEditSkill((s) => ({ ...s, name: e.target.value }))} className="h-9 text-sm" /></div>
@@ -415,7 +415,7 @@ export default function AdminPage() {
               </div>
               <div className="space-y-1.5"><Label className="text-xs">Description</Label><Input value={editSkill.description || ""} onChange={(e) => setEditSkill((s) => ({ ...s, description: e.target.value }))} className="h-9 text-sm" /></div>
               <div className="space-y-1.5"><Label className="text-xs">Prompt Template</Label><textarea className="w-full rounded-lg border bg-background p-3 text-xs font-mono h-28 resize-none" value={editSkill.prompt_template || ""} onChange={(e) => setEditSkill((s) => ({ ...s, prompt_template: e.target.value }))} /></div>
-              <div className="flex gap-2"><Button onClick={handleSaveSkill} size="sm" className="h-6 text-[10px] px-2"><Save className="h-3 w-3 mr-1" />Save</Button><Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => setEditSkill(null)}>Cancel</Button></div>
+              <div className="flex gap-2"><Button onClick={handleSaveSkill} size="sm" className="gap-1.5"><Save className="h-3.5 w-3.5" />Save</Button><Button variant="outline" size="sm" onClick={() => setEditSkill(null)}>Cancel</Button></div>
             </div>}
             <div className="space-y-2">{skills.map((sk) => <div key={sk.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 sm:px-4 py-2.5 sm:py-3">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0"><span>{sk.icon}</span><div className="min-w-0"><p className="text-sm font-medium truncate">{sk.name}</p><p className="text-[10px] text-muted-foreground truncate">{sk.description}</p></div><Badge variant="outline" className="text-[10px] hidden sm:inline-flex shrink-0">{sk.category}</Badge></div>
@@ -424,14 +424,14 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="knowledge" className="space-y-4">
-            <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">Knowledge Sources</h3><Button size="sm" className="h-6 text-[10px] px-2" onClick={() => setEditKnowledge({ name: "", description: "", content: "" })}><Plus className="h-3 w-3 mr-1" />New</Button></div>
+            <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">Knowledge Sources</h3><Button size="sm" className="gap-1.5" onClick={() => setEditKnowledge({ name: "", description: "", content: "" })}><Plus className="h-3.5 w-3.5" />New</Button></div>
             {editKnowledge && <div className="rounded-xl border bg-card p-4 space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5"><Label className="text-xs">Name</Label><Input value={editKnowledge.name || ""} onChange={(e) => setEditKnowledge((k) => ({ ...k, name: e.target.value }))} className="h-9 text-sm" /></div>
                 <div className="space-y-1.5"><Label className="text-xs">Description</Label><Input value={editKnowledge.description || ""} onChange={(e) => setEditKnowledge((k) => ({ ...k, description: e.target.value }))} className="h-9 text-sm" /></div>
               </div>
               <div className="space-y-1.5"><Label className="text-xs">Content</Label><textarea className="w-full rounded-lg border bg-background p-3 text-xs font-mono h-40 resize-none" value={editKnowledge.content || ""} onChange={(e) => setEditKnowledge((k) => ({ ...k, content: e.target.value }))} placeholder="Paste knowledge content..." /></div>
-              <div className="flex gap-2"><Button onClick={handleSaveKnowledge} size="sm" className="h-6 text-[10px] px-2"><Save className="h-3 w-3 mr-1" />Save</Button><Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => setEditKnowledge(null)}>Cancel</Button></div>
+              <div className="flex gap-2"><Button onClick={handleSaveKnowledge} size="sm" className="gap-1.5"><Save className="h-3.5 w-3.5" />Save</Button><Button variant="outline" size="sm" onClick={() => setEditKnowledge(null)}>Cancel</Button></div>
             </div>}
             <div className="space-y-2">{knowledge.map((k) => <div key={k.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 sm:px-4 py-2.5 sm:py-3">
               <div className="min-w-0"><p className="text-sm font-medium truncate">{k.name}</p><p className="text-[10px] text-muted-foreground truncate">{k.description} · {k.content.length} chars</p></div>
@@ -445,7 +445,7 @@ export default function AdminPage() {
               <div className="space-y-3">
                 <Input type="password" placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="h-9 text-sm" />
                 <Input type="password" placeholder="Confirm" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} className="h-9 text-sm" />
-                <Button size="sm" className="h-6 text-[10px] px-2" onClick={async () => { if (newPassword !== confirmPw) { toast.error("Mismatch"); return; } if (await s.changeAdminPassword(newPassword)) { toast.success("Changed!"); setNewPassword(""); setConfirmPw(""); } }}>Update</Button>
+                <Button size="sm" className="gap-1.5" onClick={async () => { if (newPassword !== confirmPw) { toast.error("Mismatch"); return; } if (await s.changeAdminPassword(newPassword)) { toast.success("Changed!"); setNewPassword(""); setConfirmPw(""); } }}>Update</Button>
               </div>
             </div>
           </TabsContent>
