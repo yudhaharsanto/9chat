@@ -180,19 +180,20 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">
-        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-3 md:px-4">
-          <div className="flex items-center gap-2 md:gap-3">
-            <Link href="/"><Button variant="ghost" size="icon" className="h-8 w-8"><ArrowLeft className="h-4 w-4" /></Button></Link>
-            <Settings className="h-5 w-5 text-primary" /><h1 className="text-base md:text-lg font-semibold">Admin</h1>
+      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm safe-area-top">
+        <div className="mx-auto flex h-12 md:h-14 max-w-6xl items-center justify-between px-2.5 sm:px-3 md:px-4">
+          <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
+            <Link href="/"><Button variant="ghost" size="icon" className="h-9 w-9 md:h-8 md:w-8"><ArrowLeft className="h-4 w-4" /></Button></Link>
+            <Settings className="h-4 w-4 md:h-5 md:w-5 text-primary" /><h1 className="text-sm md:text-lg font-semibold">Admin</h1>
           </div>
           <Button variant="outline" size="sm" onClick={s.adminLogout}><Lock className="h-3.5 w-3.5 mr-1.5" />Lock</Button>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-3 md:px-4 py-4 md:py-6 w-full">
-        <Tabs defaultValue="connection" className="space-y-6">
-          <TabsList className="h-10 flex-wrap">
+      <main className="mx-auto max-w-6xl px-2.5 sm:px-3 md:px-4 py-3 md:py-6 w-full safe-area-bottom">
+        <Tabs defaultValue="connection" className="space-y-4 md:space-y-6">
+          <div className="overflow-x-auto -mx-2.5 px-2.5 sm:-mx-3 sm:px-3 md:mx-0 md:px-0 scrollbar-none">
+            <TabsList className="h-9 md:h-10 w-max md:w-auto flex-nowrap md:flex-wrap min-w-0">
             <TabsTrigger value="connection" className="gap-1.5 text-xs"><Server className="h-3.5 w-3.5" />Connection</TabsTrigger>
             <TabsTrigger value="models" className="gap-1.5 text-xs"><Cpu className="h-3.5 w-3.5" />Models</TabsTrigger>
             <TabsTrigger value="users" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" />Users</TabsTrigger>
@@ -200,7 +201,8 @@ export default function AdminPage() {
             <TabsTrigger value="skills" className="gap-1.5 text-xs"><Zap className="h-3.5 w-3.5" />Skills</TabsTrigger>
             <TabsTrigger value="knowledge" className="gap-1.5 text-xs"><BookOpen className="h-3.5 w-3.5" />Knowledge</TabsTrigger>
             <TabsTrigger value="security" className="gap-1.5 text-xs"><Key className="h-3.5 w-3.5" />Security</TabsTrigger>
-          </TabsList>
+            </TabsList>
+          </div>
 
           <TabsContent value="connection" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
@@ -283,13 +285,13 @@ export default function AdminPage() {
                     const on = !s.modelsFilterActive || s.enabledModels.includes(m.id);
                     const imgOn = s.modelImageSupport[m.id] ?? false;
                     return (
-                      <div key={m.id} className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 ${on ? "" : "opacity-40"}`}>
+                      <div key={m.id} className={`flex items-center gap-2 sm:gap-3 rounded-lg border px-2.5 sm:px-3 py-2 ${on ? "" : "opacity-40"}`}>
                         <Switch checked={on} onCheckedChange={() => toggleModel(m.id)} />
                         <div className="flex-1 min-w-0">
                           <Input className="h-6 text-xs border-0 bg-transparent p-0 focus-visible:ring-0 font-medium" value={s.modelAliases[m.id] || ""} placeholder={getDisplayName(m.id)} onChange={(e) => s.setModelAliases({ ...s.modelAliases, [m.id]: e.target.value })} />
                           <p className="text-[10px] text-muted-foreground truncate">{m.id}</p>
                         </div>
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
                           <ImageIcon className={`h-3.5 w-3.5 ${imgOn ? "text-primary" : "text-muted-foreground/40"}`} />
                           <Switch checked={imgOn} onCheckedChange={() => toggleImageSupport(m.id)} />
                         </div>
@@ -305,7 +307,7 @@ export default function AdminPage() {
           <TabsContent value="users" className="space-y-4">
             <div className="rounded-xl border bg-card p-5 space-y-4">
               <h3 className="text-sm font-semibold">Create User</h3>
-              <div className="grid gap-3 sm:grid-cols-4">
+              <div className="grid gap-2 sm:gap-3 sm:grid-cols-4">
                 <Input placeholder="Username" value={newUser.username} onChange={(e) => setNewUser((u) => ({ ...u, username: e.target.value }))} className="h-9 text-sm" />
                 <Input type="password" placeholder="Password" value={newUser.password} onChange={(e) => setNewUser((u) => ({ ...u, password: e.target.value }))} className="h-9 text-sm" />
                 <Input placeholder="Display Name" value={newUser.display_name} onChange={(e) => setNewUser((u) => ({ ...u, display_name: e.target.value }))} className="h-9 text-sm" />
@@ -315,16 +317,16 @@ export default function AdminPage() {
             <div className="rounded-xl border bg-card p-5 space-y-3">
               <h3 className="text-sm font-semibold">Users</h3>
               {users.map((u) => (
-                <div key={u.id} className="rounded-lg border p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                <div key={u.id} className="rounded-lg border p-3 sm:p-4 space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                       <span className="text-lg">{u.avatar}</span>
-                      <div>
-                        <p className="text-sm font-medium">{u.display_name} {u.role === "admin" && <Badge variant="secondary" className="text-[10px] ml-1">admin</Badge>}</p>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{u.display_name} {u.role === "admin" && <Badge variant="secondary" className="text-[10px] ml-1">admin</Badge>}</p>
                         <p className="text-[10px] text-muted-foreground">@{u.username}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                       <Button variant="outline" size="sm" className="h-7 text-[10px] gap-1" onClick={() => setTokenDialogUser(u)}>
                         <Zap className="h-3 w-3" />
                         {(u.token_input_used || 0) + (u.token_output_used || 0) > 0
@@ -397,9 +399,9 @@ export default function AdminPage() {
               </div>
               <div className="flex gap-2"><Button onClick={handleSaveAgent} size="sm"><Save className="h-3.5 w-3.5 mr-1" />Save</Button><Button variant="outline" size="sm" onClick={() => setEditAgent(null)}>Cancel</Button></div>
             </div>}
-            <div className="space-y-2">{agents.map((a) => <div key={a.id} className="flex items-center justify-between rounded-lg border px-4 py-3">
-              <div className="flex items-center gap-3"><span className="text-lg">{a.icon}</span><div><p className="text-sm font-medium">{a.name}</p><p className="text-[10px] text-muted-foreground">{a.description}</p></div></div>
-              <div className="flex items-center gap-2">{a.is_public && <Badge variant="secondary" className="text-[10px]">Public</Badge>}<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditAgent(a)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => createClient().from("agents").delete().eq("id", a.id).then(() => { toast.success("Deleted"); loadAgentsList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
+            <div className="space-y-2">{agents.map((a) => <div key={a.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 sm:px-4 py-2.5 sm:py-3">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0"><span className="text-lg">{a.icon}</span><div className="min-w-0"><p className="text-sm font-medium truncate">{a.name}</p><p className="text-[10px] text-muted-foreground truncate">{a.description}</p></div></div>
+              <div className="flex items-center gap-1 shrink-0">{a.is_public && <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex">Public</Badge>}<Button variant="ghost" size="icon" className="h-8 w-8 md:h-7 md:w-7" onClick={() => setEditAgent(a)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-8 w-8 md:h-7 md:w-7 text-destructive" onClick={() => createClient().from("agents").delete().eq("id", a.id).then(() => { toast.success("Deleted"); loadAgentsList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
             </div>)}</div>
           </TabsContent>
 
@@ -415,9 +417,9 @@ export default function AdminPage() {
               <div className="space-y-1.5"><Label className="text-xs">Prompt Template</Label><textarea className="w-full rounded-lg border bg-background p-3 text-xs font-mono h-28 resize-none" value={editSkill.prompt_template || ""} onChange={(e) => setEditSkill((s) => ({ ...s, prompt_template: e.target.value }))} /></div>
               <div className="flex gap-2"><Button onClick={handleSaveSkill} size="sm"><Save className="h-3.5 w-3.5 mr-1" />Save</Button><Button variant="outline" size="sm" onClick={() => setEditSkill(null)}>Cancel</Button></div>
             </div>}
-            <div className="space-y-2">{skills.map((sk) => <div key={sk.id} className="flex items-center justify-between rounded-lg border px-4 py-3">
-              <div className="flex items-center gap-3"><span>{sk.icon}</span><div><p className="text-sm font-medium">{sk.name}</p><p className="text-[10px] text-muted-foreground">{sk.description}</p></div><Badge variant="outline" className="text-[10px]">{sk.category}</Badge></div>
-              <div className="flex items-center gap-2"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditSkill(sk)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => createClient().from("skills").delete().eq("id", sk.id).then(() => { toast.success("Deleted"); loadSkillsList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
+            <div className="space-y-2">{skills.map((sk) => <div key={sk.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 sm:px-4 py-2.5 sm:py-3">
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0"><span>{sk.icon}</span><div className="min-w-0"><p className="text-sm font-medium truncate">{sk.name}</p><p className="text-[10px] text-muted-foreground truncate">{sk.description}</p></div><Badge variant="outline" className="text-[10px] hidden sm:inline-flex shrink-0">{sk.category}</Badge></div>
+              <div className="flex items-center gap-1 shrink-0"><Button variant="ghost" size="icon" className="h-8 w-8 md:h-7 md:w-7" onClick={() => setEditSkill(sk)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-8 w-8 md:h-7 md:w-7 text-destructive" onClick={() => createClient().from("skills").delete().eq("id", sk.id).then(() => { toast.success("Deleted"); loadSkillsList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
             </div>)}</div>
           </TabsContent>
 
@@ -431,9 +433,9 @@ export default function AdminPage() {
               <div className="space-y-1.5"><Label className="text-xs">Content</Label><textarea className="w-full rounded-lg border bg-background p-3 text-xs font-mono h-40 resize-none" value={editKnowledge.content || ""} onChange={(e) => setEditKnowledge((k) => ({ ...k, content: e.target.value }))} placeholder="Paste knowledge content..." /></div>
               <div className="flex gap-2"><Button onClick={handleSaveKnowledge} size="sm"><Save className="h-3.5 w-3.5 mr-1" />Save</Button><Button variant="outline" size="sm" onClick={() => setEditKnowledge(null)}>Cancel</Button></div>
             </div>}
-            <div className="space-y-2">{knowledge.map((k) => <div key={k.id} className="flex items-center justify-between rounded-lg border px-4 py-3">
-              <div><p className="text-sm font-medium">{k.name}</p><p className="text-[10px] text-muted-foreground">{k.description} · {k.content.length} chars</p></div>
-              <div className="flex items-center gap-2"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditKnowledge(k)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => createClient().from("knowledge_sources").delete().eq("id", k.id).then(() => { toast.success("Deleted"); loadKnowledgeList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
+            <div className="space-y-2">{knowledge.map((k) => <div key={k.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 sm:px-4 py-2.5 sm:py-3">
+              <div className="min-w-0"><p className="text-sm font-medium truncate">{k.name}</p><p className="text-[10px] text-muted-foreground truncate">{k.description} · {k.content.length} chars</p></div>
+              <div className="flex items-center gap-1 shrink-0"><Button variant="ghost" size="icon" className="h-8 w-8 md:h-7 md:w-7" onClick={() => setEditKnowledge(k)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-8 w-8 md:h-7 md:w-7 text-destructive" onClick={() => createClient().from("knowledge_sources").delete().eq("id", k.id).then(() => { toast.success("Deleted"); loadKnowledgeList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
             </div>)}</div>
           </TabsContent>
 

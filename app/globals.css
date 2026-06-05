@@ -298,6 +298,15 @@
   .dark .glow-primary {
     box-shadow: 0 0 30px -5px oklch(0.7214 0.1337 49.9802 / 0.2);
   }
+
+  /* Hide scrollbar but keep scroll */
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* KaTeX math blocks */

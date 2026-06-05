@@ -122,7 +122,7 @@ export function TokenUsageDialog({ open, onClose, user, onUpdated }: TokenUsageD
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-[95vw] sm:max-w-3xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Zap className="h-4 w-4 text-primary" />
@@ -137,21 +137,21 @@ export function TokenUsageDialog({ open, onClose, user, onUpdated }: TokenUsageD
         ) : (
           <div className="space-y-5">
             {/* Summary Cards */}
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-lg border bg-card p-3 text-center">
-                <ArrowDownToLine className="h-4 w-4 text-blue-500 mx-auto mb-1" />
-                <p className="text-lg font-bold">{inputUsed.toLocaleString()}</p>
-                <p className="text-[10px] text-muted-foreground">Input Tokens</p>
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
+              <div className="rounded-lg border bg-card p-2 sm:p-3 text-center">
+                <ArrowDownToLine className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-500 mx-auto mb-1" />
+                <p className="text-sm sm:text-lg font-bold">{inputUsed.toLocaleString()}</p>
+                <p className="text-[9px] sm:text-[10px] text-muted-foreground">Input</p>
               </div>
-              <div className="rounded-lg border bg-card p-3 text-center">
-                <ArrowUpFromLine className="h-4 w-4 text-green-500 mx-auto mb-1" />
-                <p className="text-lg font-bold">{outputUsed.toLocaleString()}</p>
-                <p className="text-[10px] text-muted-foreground">Output Tokens</p>
+              <div className="rounded-lg border bg-card p-2 sm:p-3 text-center">
+                <ArrowUpFromLine className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500 mx-auto mb-1" />
+                <p className="text-sm sm:text-lg font-bold">{outputUsed.toLocaleString()}</p>
+                <p className="text-[9px] sm:text-[10px] text-muted-foreground">Output</p>
               </div>
-              <div className="rounded-lg border bg-card p-3 text-center">
-                <Zap className="h-4 w-4 text-amber-500 mx-auto mb-1" />
-                <p className="text-lg font-bold">{totalUsed.toLocaleString()}</p>
-                <p className="text-[10px] text-muted-foreground">Total</p>
+              <div className="rounded-lg border bg-card p-2 sm:p-3 text-center">
+                <Zap className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500 mx-auto mb-1" />
+                <p className="text-sm sm:text-lg font-bold">{totalUsed.toLocaleString()}</p>
+                <p className="text-[9px] sm:text-[10px] text-muted-foreground">Total</p>
               </div>
             </div>
 
@@ -205,42 +205,46 @@ export function TokenUsageDialog({ open, onClose, user, onUpdated }: TokenUsageD
                 <div className="space-y-2.5">
                   {modelEntries.map(([model, stats], i) => {
                     const total = stats.input + stats.output;
+                    if (total === 0) return null;
                     const barWidth = maxModelTokens > 0 ? (total / maxModelTokens) * 100 : 0;
                     const color = modelColors[i % modelColors.length];
                     const displayName = getDisplayName(model);
+                    const inputPct = total > 0 ? (stats.input / total) * 100 : 0;
                     return (
                       <div key={model} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <div className={`h-2.5 w-2.5 rounded-full ${color} flex-shrink-0`} />
-                            <span className="font-medium truncate">{displayName}</span>
-                            <Badge variant="outline" className="text-[9px] px-1.5 py-0 text-muted-foreground">{stats.count}x</Badge>
+                        <div className="flex items-center justify-between text-xs gap-2">
+                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                            <div className={`h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full ${color} shrink-0`} />
+                            <span className="font-medium truncate text-[11px] sm:text-xs">{displayName}</span>
+                            <Badge variant="outline" className="text-[8px] sm:text-[9px] px-1 sm:px-1.5 py-0 text-muted-foreground shrink-0">{stats.count}x</Badge>
                           </div>
-                          <div className="flex items-center gap-3 text-muted-foreground tabular-nums">
-                            <span className="text-blue-500 text-[10px]">↓{stats.input.toLocaleString()}</span>
-                            <span className="text-green-500 text-[10px]">↑{stats.output.toLocaleString()}</span>
-                            <span className="font-medium text-foreground text-[10px]">{total.toLocaleString()}</span>
+                          <div className="flex items-center gap-1.5 sm:gap-3 text-muted-foreground tabular-nums shrink-0">
+                            <span className="text-blue-500 text-[9px] sm:text-[10px]">↓{stats.input.toLocaleString()}</span>
+                            <span className="text-green-500 text-[9px] sm:text-[10px]">↑{stats.output.toLocaleString()}</span>
+                            <span className="font-medium text-foreground text-[9px] sm:text-[10px]">{total.toLocaleString()}</span>
                           </div>
                         </div>
-                        <div className="flex gap-1 h-1.5 rounded-full overflow-hidden bg-muted">
-                          <div
-                            className={`h-full rounded-full ${color} opacity-80`}
-                            style={{ width: `${(stats.input / total) * barWidth}%` }}
-                            title={`Input: ${stats.input.toLocaleString()}`}
-                          />
-                          <div
-                            className={`h-full rounded-full ${color} opacity-50`}
-                            style={{ width: `${(stats.output / total) * barWidth}%` }}
-                            title={`Output: ${stats.output.toLocaleString()}`}
-                          />
+                        <div className="h-1.5 sm:h-2 w-full rounded-full overflow-hidden bg-muted">
+                          <div className="flex h-full" style={{ width: `${barWidth}%` }}>
+                            <div
+                              className={`h-full ${color} opacity-80`}
+                              style={{ width: `${inputPct}%` }}
+                              title={`Input: ${stats.input.toLocaleString()}`}
+                            />
+                            <div
+                              className={`h-full ${color} opacity-50`}
+                              style={{ width: `${100 - inputPct}%` }}
+                              title={`Output: ${stats.output.toLocaleString()}`}
+                            />
+                          </div>
                         </div>
                       </div>
                     );
                   })}
                 </div>
-                <div className="flex items-center gap-4 text-[9px] text-muted-foreground pt-1 border-t">
-                  <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-full bg-foreground/30 opacity-80" /> Input</span>
-                  <span className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-full bg-foreground/30 opacity-40" /> Output</span>
+                <div className="flex items-center gap-3 sm:gap-4 text-[8px] sm:text-[9px] text-muted-foreground pt-1 border-t">
+                  <span className="flex items-center gap-1"><span className="inline-block h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-foreground/30 opacity-80" /> Input</span>
+                  <span className="flex items-center gap-1"><span className="inline-block h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-foreground/30 opacity-40" /> Output</span>
                 </div>
               </div>
             )}
@@ -258,15 +262,16 @@ export function TokenUsageDialog({ open, onClose, user, onUpdated }: TokenUsageD
                     const name = getDisplayName(log.model);
                     const total = log.input_tokens + log.output_tokens;
                     return (
-                      <div key={i} className="flex items-center justify-between rounded-lg px-3 py-1.5 text-[10px] text-muted-foreground hover:bg-muted/50 transition-colors">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-medium text-foreground truncate max-w-[140px]">{name}</span>
-                          <span className="text-muted-foreground/60">{total.toLocaleString()} tok</span>
+                      <div key={i} className="flex items-center justify-between gap-2 rounded-lg px-2 sm:px-3 py-1.5 text-[10px] text-muted-foreground hover:bg-muted/50 transition-colors">
+                        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                          <span className="font-medium text-foreground truncate max-w-[100px] sm:max-w-[140px]">{name}</span>
+                          <span className="text-muted-foreground/60 hidden sm:inline">{total.toLocaleString()} tok</span>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                           <span className="text-blue-500">↓{log.input_tokens.toLocaleString()}</span>
                           <span className="text-green-500">↑{log.output_tokens.toLocaleString()}</span>
-                          <span className="text-muted-foreground/60">{new Date(log.created_at).toLocaleString("id-ID", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })}</span>
+                          <span className="text-muted-foreground/60 hidden sm:inline">{new Date(log.created_at).toLocaleString("id-ID", { hour: "2-digit", minute: "2-digit", day: "2-digit", month: "short" })}</span>
+                          <span className="text-muted-foreground/60 sm:hidden">{new Date(log.created_at).toLocaleString("id-ID", { hour: "2-digit", minute: "2-digit" })}</span>
                         </div>
                       </div>
                     );
