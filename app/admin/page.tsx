@@ -371,7 +371,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="agents" className="space-y-4">
-            <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">AI Agents</h3><Button size="sm" onClick={() => setEditAgent({ name: "", description: "", icon: "🤖", system_prompt: "", model: "gpt-4o", temperature: 0.7, max_tokens: 4096, is_public: true })}><Plus className="h-4 w-4 mr-1" />New</Button></div>
+            <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">AI Agents</h3><Button size="sm" className="h-6 text-[10px] px-2" onClick={() => setEditAgent({ name: "", description: "", icon: "🤖", system_prompt: "", model: "gpt-4o", temperature: 0.7, max_tokens: 4096, is_public: true })}><Plus className="h-3 w-3 mr-1" />New</Button></div>
             {editAgent && <div className="rounded-xl border bg-card p-4 space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5"><Label className="text-xs">Name</Label><Input value={editAgent.name || ""} onChange={(e) => setEditAgent((a) => ({ ...a, name: e.target.value }))} className="h-9 text-sm" /></div>
@@ -397,7 +397,7 @@ export default function AdminPage() {
                 </div>
                 <div className="flex items-end gap-2"><Switch checked={editAgent.is_public || false} onCheckedChange={(v) => setEditAgent((a) => ({ ...a, is_public: v }))} /><Label className="text-xs">Public</Label></div>
               </div>
-              <div className="flex gap-2"><Button onClick={handleSaveAgent} size="sm"><Save className="h-3.5 w-3.5 mr-1" />Save</Button><Button variant="outline" size="sm" onClick={() => setEditAgent(null)}>Cancel</Button></div>
+              <div className="flex gap-2"><Button onClick={handleSaveAgent} size="sm" className="h-6 text-[10px] px-2"><Save className="h-3 w-3 mr-1" />Save</Button><Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => setEditAgent(null)}>Cancel</Button></div>
             </div>}
             <div className="space-y-2">{agents.map((a) => <div key={a.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 sm:px-4 py-2.5 sm:py-3">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0"><span className="text-lg">{a.icon}</span><div className="min-w-0"><p className="text-sm font-medium truncate">{a.name}</p><p className="text-[10px] text-muted-foreground truncate">{a.description}</p></div></div>
@@ -406,7 +406,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="skills" className="space-y-4">
-            <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">Skills</h3><Button size="sm" onClick={() => setEditSkill({ name: "", description: "", icon: "⚡", prompt_template: "", category: "general" })}><Plus className="h-4 w-4 mr-1" />New</Button></div>
+            <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">Skills</h3><Button size="sm" className="h-6 text-[10px] px-2" onClick={() => setEditSkill({ name: "", description: "", icon: "⚡", prompt_template: "", category: "general" })}><Plus className="h-3 w-3 mr-1" />New</Button></div>
             {editSkill && <div className="rounded-xl border bg-card p-4 space-y-3">
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="space-y-1.5"><Label className="text-xs">Name</Label><Input value={editSkill.name || ""} onChange={(e) => setEditSkill((s) => ({ ...s, name: e.target.value }))} className="h-9 text-sm" /></div>
@@ -415,7 +415,7 @@ export default function AdminPage() {
               </div>
               <div className="space-y-1.5"><Label className="text-xs">Description</Label><Input value={editSkill.description || ""} onChange={(e) => setEditSkill((s) => ({ ...s, description: e.target.value }))} className="h-9 text-sm" /></div>
               <div className="space-y-1.5"><Label className="text-xs">Prompt Template</Label><textarea className="w-full rounded-lg border bg-background p-3 text-xs font-mono h-28 resize-none" value={editSkill.prompt_template || ""} onChange={(e) => setEditSkill((s) => ({ ...s, prompt_template: e.target.value }))} /></div>
-              <div className="flex gap-2"><Button onClick={handleSaveSkill} size="sm"><Save className="h-3.5 w-3.5 mr-1" />Save</Button><Button variant="outline" size="sm" onClick={() => setEditSkill(null)}>Cancel</Button></div>
+              <div className="flex gap-2"><Button onClick={handleSaveSkill} size="sm" className="h-6 text-[10px] px-2"><Save className="h-3 w-3 mr-1" />Save</Button><Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => setEditSkill(null)}>Cancel</Button></div>
             </div>}
             <div className="space-y-2">{skills.map((sk) => <div key={sk.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 sm:px-4 py-2.5 sm:py-3">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0"><span>{sk.icon}</span><div className="min-w-0"><p className="text-sm font-medium truncate">{sk.name}</p><p className="text-[10px] text-muted-foreground truncate">{sk.description}</p></div><Badge variant="outline" className="text-[10px] hidden sm:inline-flex shrink-0">{sk.category}</Badge></div>
@@ -424,14 +424,14 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="knowledge" className="space-y-4">
-            <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">Knowledge Sources</h3><Button size="sm" onClick={() => setEditKnowledge({ name: "", description: "", content: "" })}><Plus className="h-4 w-4 mr-1" />New</Button></div>
+            <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">Knowledge Sources</h3><Button size="sm" className="h-6 text-[10px] px-2" onClick={() => setEditKnowledge({ name: "", description: "", content: "" })}><Plus className="h-3 w-3 mr-1" />New</Button></div>
             {editKnowledge && <div className="rounded-xl border bg-card p-4 space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5"><Label className="text-xs">Name</Label><Input value={editKnowledge.name || ""} onChange={(e) => setEditKnowledge((k) => ({ ...k, name: e.target.value }))} className="h-9 text-sm" /></div>
                 <div className="space-y-1.5"><Label className="text-xs">Description</Label><Input value={editKnowledge.description || ""} onChange={(e) => setEditKnowledge((k) => ({ ...k, description: e.target.value }))} className="h-9 text-sm" /></div>
               </div>
               <div className="space-y-1.5"><Label className="text-xs">Content</Label><textarea className="w-full rounded-lg border bg-background p-3 text-xs font-mono h-40 resize-none" value={editKnowledge.content || ""} onChange={(e) => setEditKnowledge((k) => ({ ...k, content: e.target.value }))} placeholder="Paste knowledge content..." /></div>
-              <div className="flex gap-2"><Button onClick={handleSaveKnowledge} size="sm"><Save className="h-3.5 w-3.5 mr-1" />Save</Button><Button variant="outline" size="sm" onClick={() => setEditKnowledge(null)}>Cancel</Button></div>
+              <div className="flex gap-2"><Button onClick={handleSaveKnowledge} size="sm" className="h-6 text-[10px] px-2"><Save className="h-3 w-3 mr-1" />Save</Button><Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => setEditKnowledge(null)}>Cancel</Button></div>
             </div>}
             <div className="space-y-2">{knowledge.map((k) => <div key={k.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 sm:px-4 py-2.5 sm:py-3">
               <div className="min-w-0"><p className="text-sm font-medium truncate">{k.name}</p><p className="text-[10px] text-muted-foreground truncate">{k.description} · {k.content.length} chars</p></div>
@@ -445,7 +445,7 @@ export default function AdminPage() {
               <div className="space-y-3">
                 <Input type="password" placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="h-9 text-sm" />
                 <Input type="password" placeholder="Confirm" value={confirmPw} onChange={(e) => setConfirmPw(e.target.value)} className="h-9 text-sm" />
-                <Button size="sm" onClick={async () => { if (newPassword !== confirmPw) { toast.error("Mismatch"); return; } if (await s.changeAdminPassword(newPassword)) { toast.success("Changed!"); setNewPassword(""); setConfirmPw(""); } }}>Update</Button>
+                <Button size="sm" className="h-6 text-[10px] px-2" onClick={async () => { if (newPassword !== confirmPw) { toast.error("Mismatch"); return; } if (await s.changeAdminPassword(newPassword)) { toast.success("Changed!"); setNewPassword(""); setConfirmPw(""); } }}>Update</Button>
               </div>
             </div>
           </TabsContent>
