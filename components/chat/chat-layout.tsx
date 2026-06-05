@@ -65,16 +65,16 @@ export function ChatLayout() {
       {/* Main */}
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         {/* Header */}
-        <header className="flex h-11 items-center justify-between border-b border-border/40 bg-background/80 px-3 md:px-4 backdrop-blur-md shrink-0 safe-area-top">
-          <div className="flex items-center gap-1.5 md:gap-2 min-w-0">
+        <header className="flex h-12 md:h-11 items-center justify-between border-b border-border/40 bg-background/80 px-2.5 sm:px-3 md:px-4 backdrop-blur-md shrink-0 safe-area-top">
+          <div className="flex items-center gap-1 sm:gap-1.5 md:gap-2 min-w-0 flex-1">
             {/* Mobile menu button */}
             <Button
               variant="ghost"
               size="icon"
-              className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground md:hidden"
+              className="h-9 w-9 md:h-7 md:w-7 rounded-lg text-muted-foreground hover:text-foreground md:hidden"
               onClick={() => setMobileSidebar(true)}
             >
-              <Menu className="h-4 w-4" />
+              <Menu className="h-5 w-5 md:h-4 md:w-4" />
             </Button>
 
             {/* Desktop sidebar toggle */}
@@ -103,20 +103,20 @@ export function ChatLayout() {
             )}
 
             {activeAgent && (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 min-w-0">
                 <span className="text-sm">{activeAgent.icon}</span>
-                <span className="text-xs font-medium text-muted-foreground truncate max-w-[120px] md:max-w-[200px]">{activeAgent.name}</span>
+                <span className="text-xs font-medium text-muted-foreground truncate max-w-[100px] sm:max-w-[150px] md:max-w-[200px]">{activeAgent.name}</span>
               </div>
             )}
 
             {activeConversation && !activeAgent && (
-              <span className="text-xs font-medium text-muted-foreground truncate max-w-[120px] md:max-w-[200px]">
+              <span className="text-xs font-medium text-muted-foreground truncate max-w-[100px] sm:max-w-[150px] md:max-w-[200px]">
                 {activeConversation.title}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
             {currentUser && activeConversation && (
               <ContextUsageIndicator
                 modelId={activeConversation.model}
@@ -124,7 +124,7 @@ export function ChatLayout() {
                 systemPrompt={activeAgent?.system_prompt || activeConversation?.system_prompt || undefined}
                 knowledgeSources={knowledgeSources}
                 memories={memories}
-                className="mr-1"
+                className="mr-0.5 sm:mr-1 hidden sm:flex"
               />
             )}
             {currentUser && <TokenIndicator userId={currentUser.id} />}
@@ -133,10 +133,10 @@ export function ChatLayout() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground"
+                  className="h-9 w-9 md:h-7 md:w-7 rounded-lg text-muted-foreground hover:text-foreground"
                   onClick={() => setContextPanelOpen((v) => !v)}
                 >
-                  <FileText className="h-3.5 w-3.5" />
+                  <FileText className="h-4 w-4 md:h-3.5 md:w-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Context</TooltipContent>
@@ -146,10 +146,10 @@ export function ChatLayout() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground"
+                  className="h-9 w-9 md:h-7 md:w-7 rounded-lg text-muted-foreground hover:text-foreground"
                   onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                 >
-                  {theme === "dark" ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+                  {theme === "dark" ? <Sun className="h-4 w-4 md:h-3.5 md:w-3.5" /> : <Moon className="h-4 w-4 md:h-3.5 md:w-3.5" />}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>Toggle theme</TooltipContent>
@@ -158,8 +158,8 @@ export function ChatLayout() {
               <Tooltip>
                 <TooltipTrigger>
                   <Link href="/admin">
-                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg text-muted-foreground hover:text-foreground">
-                      <Settings className="h-3.5 w-3.5" />
+                    <Button variant="ghost" size="icon" className="h-9 w-9 md:h-7 md:w-7 rounded-lg text-muted-foreground hover:text-foreground">
+                      <Settings className="h-4 w-4 md:h-3.5 md:w-3.5" />
                     </Button>
                   </Link>
                 </TooltipTrigger>
@@ -172,7 +172,7 @@ export function ChatLayout() {
         <ChatArea />
       </div>
 
-      {/* Context Panel */}
+      {/* Context Panel — Desktop */}
       {contextPanelOpen && (
         <div className="hidden md:flex flex-shrink-0 w-[300px] border-l border-border/40 overflow-hidden">
           <ContextPanel
@@ -185,6 +185,38 @@ export function ChatLayout() {
             messageCount={messages.length}
             className="w-[300px]"
           />
+        </div>
+      )}
+
+      {/* Context Panel — Mobile Overlay */}
+      {contextPanelOpen && (
+        <div className="md:hidden">
+          <div className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" onClick={() => setContextPanelOpen(false)} />
+          <div className="fixed inset-y-0 right-0 z-50 w-[85vw] max-w-[340px] bg-background shadow-xl flex flex-col safe-area-inset">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-border/40 shrink-0">
+              <span className="text-sm font-semibold">Context</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-lg"
+                onClick={() => setContextPanelOpen(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <ContextPanel
+                systemPrompt={activeAgent?.system_prompt || activeConversation?.system_prompt || undefined}
+                knowledgeSources={knowledgeSources}
+                memories={memories}
+                modelName={activeConversation?.model ? (modelAliases[activeConversation.model] || activeConversation.model) : undefined}
+                modelId={activeConversation?.model}
+                userName={currentUser?.display_name || currentUser?.username}
+                messageCount={messages.length}
+                className="h-full"
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>
