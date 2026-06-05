@@ -202,50 +202,35 @@ export function TokenUsageDialog({ open, onClose, user, onUpdated }: TokenUsageD
                   <Label className="text-xs font-medium">Penggunaan per Model</Label>
                   <Badge variant="secondary" className="text-[9px] ml-auto">{modelEntries.length} model</Badge>
                 </div>
-                <div className="space-y-2.5">
+                <div className="space-y-2">
                   {modelEntries.map(([model, stats], i) => {
                     const total = stats.input + stats.output;
                     if (total === 0) return null;
-                    const barWidth = maxModelTokens > 0 ? (total / maxModelTokens) * 100 : 0;
+                    const barPct = maxModelTokens > 0 ? (total / maxModelTokens) * 100 : 0;
                     const color = modelColors[i % modelColors.length];
                     const displayName = getDisplayName(model);
-                    const inputPct = total > 0 ? (stats.input / total) * 100 : 0;
                     return (
                       <div key={model} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs gap-2">
-                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                            <div className={`h-2 w-2 sm:h-2.5 sm:w-2.5 rounded-full ${color} shrink-0`} />
-                            <span className="font-medium truncate text-[11px] sm:text-xs">{displayName}</span>
-                            <Badge variant="outline" className="text-[8px] sm:text-[9px] px-1 sm:px-1.5 py-0 text-muted-foreground shrink-0">{stats.count}x</Badge>
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className={`inline-block h-2 w-2 rounded-full ${color} shrink-0`} />
+                            <span className="font-medium text-[11px] truncate">{displayName}</span>
+                            <span className="text-[9px] text-muted-foreground shrink-0">{stats.count}×</span>
                           </div>
-                          <div className="flex items-center gap-1.5 sm:gap-3 text-muted-foreground tabular-nums shrink-0">
-                            <span className="text-blue-500 text-[9px] sm:text-[10px]">↓{stats.input.toLocaleString()}</span>
-                            <span className="text-green-500 text-[9px] sm:text-[10px]">↑{stats.output.toLocaleString()}</span>
-                            <span className="font-medium text-foreground text-[9px] sm:text-[10px]">{total.toLocaleString()}</span>
+                          <div className="flex items-center gap-2 text-[10px] tabular-nums shrink-0">
+                            <span className="text-blue-500">↓{stats.input.toLocaleString()}</span>
+                            <span className="text-green-500">↑{stats.output.toLocaleString()}</span>
+                            <span className="font-medium">{total.toLocaleString()}</span>
                           </div>
                         </div>
-                        <div className="h-1.5 sm:h-2 w-full rounded-full overflow-hidden bg-muted">
-                          <div className="flex h-full" style={{ width: `${barWidth}%` }}>
-                            <div
-                              className={`h-full ${color} opacity-80`}
-                              style={{ width: `${inputPct}%` }}
-                              title={`Input: ${stats.input.toLocaleString()}`}
-                            />
-                            <div
-                              className={`h-full ${color} opacity-50`}
-                              style={{ width: `${100 - inputPct}%` }}
-                              title={`Output: ${stats.output.toLocaleString()}`}
-                            />
-                          </div>
+                        <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                          <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.max(barPct, 1)}%` }} />
                         </div>
                       </div>
                     );
                   })}
                 </div>
-                <div className="flex items-center gap-3 sm:gap-4 text-[8px] sm:text-[9px] text-muted-foreground pt-1 border-t">
-                  <span className="flex items-center gap-1"><span className="inline-block h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-foreground/30 opacity-80" /> Input</span>
-                  <span className="flex items-center gap-1"><span className="inline-block h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-foreground/30 opacity-40" /> Output</span>
-                </div>
+                <p className="text-[9px] text-muted-foreground pt-1 border-t">Bar = total token per model relatif terhadap model terbanyak</p>
               </div>
             )}
 

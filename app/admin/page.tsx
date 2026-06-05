@@ -206,7 +206,7 @@ export default function AdminPage() {
 
           <TabsContent value="connection" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-xl border bg-card p-5 space-y-4">
+              <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4">
                 <div className="flex items-center gap-2"><div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10"><Server className="h-4 w-4 text-primary" /></div><div><h3 className="text-sm font-semibold">9router</h3><p className="text-xs text-muted-foreground">AI Gateway</p></div></div>
                 <div className="space-y-3">
                   <div className="space-y-1.5"><Label className="text-xs">URL</Label><Input value={form.routerUrl} onChange={(e) => setForm((f) => ({ ...f, routerUrl: e.target.value }))} className="h-9 text-sm" /></div>
@@ -217,7 +217,7 @@ export default function AdminPage() {
                 </div>
               </div>
               {/* Database — auto-detected from env */}
-              <div className="rounded-xl border bg-card p-5 space-y-4">
+              <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4">
                 <div className="flex items-center gap-2">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10"><CheckCircle2 className="h-4 w-4 text-green-600" /></div>
                   <div>
@@ -239,7 +239,7 @@ export default function AdminPage() {
             </div>
 
             {/* ImgBB */}
-            <div className="rounded-xl border bg-card p-5 space-y-4">
+            <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4">
               <div className="flex items-center gap-2">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10"><HardDrive className="h-4 w-4 text-blue-600" /></div>
                 <div>
@@ -271,7 +271,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="models" className="space-y-4">
-            <div className="rounded-xl border bg-card p-5 space-y-4">
+            <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4">
               <div className="flex items-center justify-between"><div><h3 className="text-sm font-semibold">Models</h3><p className="text-xs text-muted-foreground">Toggle visibility + set aliases + image support</p></div><div className="flex items-center gap-2"><Badge variant="secondary" className="text-xs">{s.modelsFilterActive ? `${s.enabledModels.length}/${allModels.length}` : `All ${allModels.length}`}</Badge>{Object.values(s.modelImageSupport).filter(Boolean).length > 0 && <Badge variant="secondary" className="text-xs gap-1"><ImageIcon className="h-2.5 w-2.5" />{Object.values(s.modelImageSupport).filter(Boolean).length} img</Badge>}</div></div>
               <div className="flex items-center gap-2">
                 <div className="relative flex-1"><Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" /><Input placeholder="Search..." value={modelSearch} onChange={(e) => setModelSearch(e.target.value)} className="h-8 pl-8 text-xs" /></div>
@@ -305,7 +305,7 @@ export default function AdminPage() {
           </TabsContent>
 
           <TabsContent value="users" className="space-y-4">
-            <div className="rounded-xl border bg-card p-5 space-y-4">
+            <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4">
               <h3 className="text-sm font-semibold">Create User</h3>
               <div className="grid gap-2 sm:gap-3 sm:grid-cols-4">
                 <Input placeholder="Username" value={newUser.username} onChange={(e) => setNewUser((u) => ({ ...u, username: e.target.value }))} className="h-9 text-sm" />
@@ -314,7 +314,7 @@ export default function AdminPage() {
                 <Button onClick={handleCreateUser} className="gap-1.5"><Plus className="h-4 w-4" />Create</Button>
               </div>
             </div>
-            <div className="rounded-xl border bg-card p-5 space-y-3">
+            <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-2 sm:space-y-3">
               <h3 className="text-sm font-semibold">Users</h3>
               {users.map((u) => (
                 <div key={u.id} className="rounded-lg border p-3 sm:p-4 space-y-3">
@@ -372,7 +372,7 @@ export default function AdminPage() {
 
           <TabsContent value="agents" className="space-y-4">
             <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">AI Agents</h3><Button size="sm" onClick={() => setEditAgent({ name: "", description: "", icon: "🤖", system_prompt: "", model: "gpt-4o", temperature: 0.7, max_tokens: 4096, is_public: true })}><Plus className="h-4 w-4 mr-1" />New</Button></div>
-            {editAgent && <div className="rounded-xl border bg-card p-5 space-y-3">
+            {editAgent && <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-2 sm:space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5"><Label className="text-xs">Name</Label><Input value={editAgent.name || ""} onChange={(e) => setEditAgent((a) => ({ ...a, name: e.target.value }))} className="h-9 text-sm" /></div>
                 <div className="space-y-1.5"><Label className="text-xs">Icon</Label><Input value={editAgent.icon || ""} onChange={(e) => setEditAgent((a) => ({ ...a, icon: e.target.value }))} className="h-9 text-sm" /></div>
@@ -401,13 +401,13 @@ export default function AdminPage() {
             </div>}
             <div className="space-y-2">{agents.map((a) => <div key={a.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 sm:px-4 py-2.5 sm:py-3">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0"><span className="text-lg">{a.icon}</span><div className="min-w-0"><p className="text-sm font-medium truncate">{a.name}</p><p className="text-[10px] text-muted-foreground truncate">{a.description}</p></div></div>
-              <div className="flex items-center gap-1 shrink-0">{a.is_public && <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex">Public</Badge>}<Button variant="ghost" size="icon" className="h-8 w-8 md:h-7 md:w-7" onClick={() => setEditAgent(a)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-8 w-8 md:h-7 md:w-7 text-destructive" onClick={() => createClient().from("agents").delete().eq("id", a.id).then(() => { toast.success("Deleted"); loadAgentsList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
+              <div className="flex items-center gap-1 shrink-0">{a.is_public && <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex">Public</Badge>}<Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditAgent(a)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => createClient().from("agents").delete().eq("id", a.id).then(() => { toast.success("Deleted"); loadAgentsList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
             </div>)}</div>
           </TabsContent>
 
           <TabsContent value="skills" className="space-y-4">
             <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">Skills</h3><Button size="sm" onClick={() => setEditSkill({ name: "", description: "", icon: "⚡", prompt_template: "", category: "general" })}><Plus className="h-4 w-4 mr-1" />New</Button></div>
-            {editSkill && <div className="rounded-xl border bg-card p-5 space-y-3">
+            {editSkill && <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-2 sm:space-y-3">
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="space-y-1.5"><Label className="text-xs">Name</Label><Input value={editSkill.name || ""} onChange={(e) => setEditSkill((s) => ({ ...s, name: e.target.value }))} className="h-9 text-sm" /></div>
                 <div className="space-y-1.5"><Label className="text-xs">Icon</Label><Input value={editSkill.icon || ""} onChange={(e) => setEditSkill((s) => ({ ...s, icon: e.target.value }))} className="h-9 text-sm" /></div>
@@ -419,13 +419,13 @@ export default function AdminPage() {
             </div>}
             <div className="space-y-2">{skills.map((sk) => <div key={sk.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 sm:px-4 py-2.5 sm:py-3">
               <div className="flex items-center gap-2 sm:gap-3 min-w-0"><span>{sk.icon}</span><div className="min-w-0"><p className="text-sm font-medium truncate">{sk.name}</p><p className="text-[10px] text-muted-foreground truncate">{sk.description}</p></div><Badge variant="outline" className="text-[10px] hidden sm:inline-flex shrink-0">{sk.category}</Badge></div>
-              <div className="flex items-center gap-1 shrink-0"><Button variant="ghost" size="icon" className="h-8 w-8 md:h-7 md:w-7" onClick={() => setEditSkill(sk)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-8 w-8 md:h-7 md:w-7 text-destructive" onClick={() => createClient().from("skills").delete().eq("id", sk.id).then(() => { toast.success("Deleted"); loadSkillsList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
+              <div className="flex items-center gap-1 shrink-0"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditSkill(sk)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => createClient().from("skills").delete().eq("id", sk.id).then(() => { toast.success("Deleted"); loadSkillsList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
             </div>)}</div>
           </TabsContent>
 
           <TabsContent value="knowledge" className="space-y-4">
             <div className="flex justify-between items-center"><h3 className="text-sm font-semibold">Knowledge Sources</h3><Button size="sm" onClick={() => setEditKnowledge({ name: "", description: "", content: "" })}><Plus className="h-4 w-4 mr-1" />New</Button></div>
-            {editKnowledge && <div className="rounded-xl border bg-card p-5 space-y-3">
+            {editKnowledge && <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-2 sm:space-y-3">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5"><Label className="text-xs">Name</Label><Input value={editKnowledge.name || ""} onChange={(e) => setEditKnowledge((k) => ({ ...k, name: e.target.value }))} className="h-9 text-sm" /></div>
                 <div className="space-y-1.5"><Label className="text-xs">Description</Label><Input value={editKnowledge.description || ""} onChange={(e) => setEditKnowledge((k) => ({ ...k, description: e.target.value }))} className="h-9 text-sm" /></div>
@@ -435,12 +435,12 @@ export default function AdminPage() {
             </div>}
             <div className="space-y-2">{knowledge.map((k) => <div key={k.id} className="flex items-center justify-between gap-2 rounded-lg border px-3 sm:px-4 py-2.5 sm:py-3">
               <div className="min-w-0"><p className="text-sm font-medium truncate">{k.name}</p><p className="text-[10px] text-muted-foreground truncate">{k.description} · {k.content.length} chars</p></div>
-              <div className="flex items-center gap-1 shrink-0"><Button variant="ghost" size="icon" className="h-8 w-8 md:h-7 md:w-7" onClick={() => setEditKnowledge(k)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-8 w-8 md:h-7 md:w-7 text-destructive" onClick={() => createClient().from("knowledge_sources").delete().eq("id", k.id).then(() => { toast.success("Deleted"); loadKnowledgeList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
+              <div className="flex items-center gap-1 shrink-0"><Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditKnowledge(k)}><Pencil className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => createClient().from("knowledge_sources").delete().eq("id", k.id).then(() => { toast.success("Deleted"); loadKnowledgeList(); })}><Trash2 className="h-3.5 w-3.5" /></Button></div>
             </div>)}</div>
           </TabsContent>
 
           <TabsContent value="security" className="space-y-4">
-            <div className="rounded-xl border bg-card p-5 space-y-4 max-w-md">
+            <div className="rounded-xl border bg-card p-3 sm:p-4 md:p-5 space-y-3 sm:space-y-4 max-w-md">
               <div className="flex items-center gap-2"><Key className="h-5 w-5 text-amber-600" /><h3 className="text-sm font-semibold">Admin Password</h3></div>
               <div className="space-y-3">
                 <Input type="password" placeholder="New password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="h-9 text-sm" />
