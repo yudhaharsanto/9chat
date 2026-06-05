@@ -194,13 +194,13 @@ export default function AdminPage() {
         <Tabs defaultValue="connection" className="space-y-3 md:space-y-5">
           <div className="overflow-x-auto scrollbar-none -mx-3 px-3 sm:-mx-4 sm:px-4 md:mx-0 md:px-0">
             <TabsList className="h-9 md:h-10 w-max md:w-auto flex-nowrap md:flex-wrap">
-            <TabsTrigger value="connection" className="gap-1.5 text-xs"><Server className="h-3.5 w-3.5" />Connection</TabsTrigger>
-            <TabsTrigger value="models" className="gap-1.5 text-xs"><Cpu className="h-3.5 w-3.5" />Models</TabsTrigger>
-            <TabsTrigger value="users" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" />Users</TabsTrigger>
-            <TabsTrigger value="agents" className="gap-1.5 text-xs"><Bot className="h-3.5 w-3.5" />Agents</TabsTrigger>
-            <TabsTrigger value="skills" className="gap-1.5 text-xs"><Zap className="h-3.5 w-3.5" />Skills</TabsTrigger>
-            <TabsTrigger value="knowledge" className="gap-1.5 text-xs"><BookOpen className="h-3.5 w-3.5" />Knowledge</TabsTrigger>
-            <TabsTrigger value="security" className="gap-1.5 text-xs"><Key className="h-3.5 w-3.5" />Security</TabsTrigger>
+            <TabsTrigger value="connection" className="gap-1.5 text-xs"><Server className="h-3.5 w-3.5" /><span className="hidden sm:inline">Connection</span></TabsTrigger>
+            <TabsTrigger value="models" className="gap-1.5 text-xs"><Cpu className="h-3.5 w-3.5" /><span className="hidden sm:inline">Models</span></TabsTrigger>
+            <TabsTrigger value="users" className="gap-1.5 text-xs"><Users className="h-3.5 w-3.5" /><span className="hidden sm:inline">Users</span></TabsTrigger>
+            <TabsTrigger value="agents" className="gap-1.5 text-xs"><Bot className="h-3.5 w-3.5" /><span className="hidden sm:inline">Agents</span></TabsTrigger>
+            <TabsTrigger value="skills" className="gap-1.5 text-xs"><Zap className="h-3.5 w-3.5" /><span className="hidden sm:inline">Skills</span></TabsTrigger>
+            <TabsTrigger value="knowledge" className="gap-1.5 text-xs"><BookOpen className="h-3.5 w-3.5" /><span className="hidden sm:inline">Knowledge</span></TabsTrigger>
+            <TabsTrigger value="security" className="gap-1.5 text-xs"><Key className="h-3.5 w-3.5" /><span className="hidden sm:inline">Security</span></TabsTrigger>
             </TabsList>
           </div>
 
