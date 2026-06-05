@@ -725,7 +725,7 @@ export function ChatArea() {
             </div>
 
             {/* Quick actions */}
-            <div className="grid grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               {[
                 { icon: "💡", label: "Brainstorm", desc: "Generate creative ideas", prompt: "Help me brainstorm ideas for " },
                 { icon: "🧑‍💻", label: "Write Code", desc: "Build something awesome", prompt: "Write code for " },
@@ -748,7 +748,7 @@ export function ChatArea() {
             </div>
 
             {/* Capabilities */}
-            <div className="mt-6 flex items-center justify-center gap-6 text-[10px] text-muted-foreground/60">
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-[10px] text-muted-foreground/60">
               {[
                 { icon: Zap, label: "Streaming" },
                 { icon: Shield, label: "Private" },
@@ -798,7 +798,7 @@ export function ChatArea() {
 
       {/* Messages */}
       <ScrollArea className="flex-1 min-h-0" ref={scrollRef}>
-        <div className="w-full space-y-0.5 px-4 py-4">
+        <div className="w-full space-y-0.5 px-2 sm:px-4 py-4">
           {(() => {
             // Build display list with branch awareness
             const display: React.ReactNode[] = [];

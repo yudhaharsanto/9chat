@@ -104,7 +104,7 @@ export function ChatMessage({ role, content, thinking, isStreaming, isThinking, 
         )}
 
         {/* Message bubble */}
-        <div className={cn("relative", isUser ? "max-w-[85%] order-1" : "max-w-[90%]")}>
+        <div className={cn("relative", isUser ? "max-w-[90%] sm:max-w-[85%] order-1" : "max-w-[95%] sm:max-w-[90%]")}>
           <div
             className={cn(
               "rounded-2xl px-3.5 py-2.5 text-[0.875rem] leading-relaxed relative",
@@ -145,9 +145,9 @@ export function ChatMessage({ role, content, thinking, isStreaming, isThinking, 
                         return <code className="rounded-md bg-muted/80 px-1.5 py-0.5 text-[0.82em] font-mono font-medium" {...props}>{children}</code>;
                       }
                       return (
-                        <div className="group/code relative my-3 overflow-hidden rounded-xl border border-border/60 bg-muted/30">
+                        <div className="group/code relative my-3 overflow-hidden rounded-xl border border-border/60 bg-muted/30 max-w-full">
                           {match && (
-                            <div className="flex items-center justify-between border-b border-border/40 bg-muted/50 px-4 py-2">
+                            <div className="flex items-center justify-between border-b border-border/40 bg-muted/50 px-3 sm:px-4 py-2">
                               <span className="select-none text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">{match[1]}</span>
                               <Button variant="ghost" size="sm" className="h-6 gap-1 rounded-md px-2 text-[10px] opacity-0 transition-opacity group-hover/code:opacity-100" onClick={(e) => {
                                 const wrapper = (e.currentTarget as HTMLElement).parentElement?.parentElement;
@@ -159,13 +159,13 @@ export function ChatMessage({ role, content, thinking, isStreaming, isThinking, 
                               </Button>
                             </div>
                           )}
-                          <pre className={cn("overflow-x-auto p-4 text-[0.82em] leading-relaxed", className)}>
+                          <pre className={cn("overflow-x-auto p-3 sm:p-4 text-[0.78em] sm:text-[0.82em] leading-relaxed", className)}>
                             <code {...props}>{children}</code>
                           </pre>
                         </div>
                       );
                     },
-                    table({ children }) { return <div className="my-3 overflow-x-auto rounded-lg border border-border/60"><table className="w-full text-sm">{children}</table></div>; },
+                    table({ children }) { return <div className="my-3 overflow-x-auto rounded-lg border border-border/60 -mx-1 px-1"><table className="w-full text-sm min-w-[300px]">{children}</table></div>; },
                     thead({ children }) { return <thead className="border-b border-border/60 bg-muted/30">{children}</thead>; },
                     th({ children }) { return <th className="px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">{children}</th>; },
                     td({ children }) { return <td className="border-b border-border/30 px-4 py-2.5 text-sm last:border-0">{children}</td>; },

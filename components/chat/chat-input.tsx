@@ -172,7 +172,7 @@ export function ChatInput({
     : (!!content.trim() || (!!attachedImage && supportsImage)) && !disabled && !(attachedImage && !supportsImage);
 
   return (
-    <div className="relative border-t border-border/40 bg-gradient-to-t from-background via-background to-background/0 pb-4 pt-6">
+    <div className="relative border-t border-border/40 bg-gradient-to-t from-background via-background to-background/0 pb-4 pt-6 safe-area-bottom">
       <div className="mx-auto max-w-3xl px-4">
 
         {/* Edit mode banner */}

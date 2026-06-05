@@ -65,7 +65,7 @@ export function ChatLayout() {
       {/* Main */}
       <div className="flex flex-1 flex-col overflow-hidden min-w-0">
         {/* Header */}
-        <header className="flex h-11 items-center justify-between border-b border-border/40 bg-background/80 px-3 md:px-4 backdrop-blur-md shrink-0">
+        <header className="flex h-11 items-center justify-between border-b border-border/40 bg-background/80 px-3 md:px-4 backdrop-blur-md shrink-0 safe-area-top">
           <div className="flex items-center gap-1.5 md:gap-2 min-w-0">
             {/* Mobile menu button */}
             <Button
